@@ -1,7 +1,12 @@
 (deftemplate jugador
     (slot id (type INTEGER))
 	(slot tipo (type SYMBOL))
-    (slot color (type SYMBOL)))
+    (slot color (type INTEGER)(range -1 1)))
+
+(deftemplate estado
+    (slot id (type INTEGER))
+    (slot padre (type INTEGER))
+    (multislot fichas (type INTEGER) (cardinality 26 26)))
 
 (deffunction getTipo (?num)
     (printout t "Elige el tipo de jugador " ?num " (humano/cpu): " crlf)
@@ -49,4 +54,6 @@
     (bind ?tipo2 (getTipo 2))
     (bind ?color2 (* ?color1 -1))
     
-    (assert (jugador (id 1) (tipo ?tipo2) (color ?color2))))
+    (assert (jugador (id 1) (tipo ?tipo2) (color ?color2)))
+    
+    (assert (estado (id 0) (padre -1) (fichas (create$ 0 2 0 0 0 0 -5 0 -3 0 0 0 5 -5 0 0 0 3 0 5 0 0 0 0 -2 0)))))
