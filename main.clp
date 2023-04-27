@@ -1,6 +1,7 @@
+
 (deftemplate jugador
     (slot id (type INTEGER))
-	(slot tipo (type SYMBOL))
+  	(slot tipo (type SYMBOL))
     (slot color (type INTEGER)(range -1 1)))
 
 (deftemplate estado
@@ -58,24 +59,15 @@
 =>
 	(retract ?i)
 
-    (bind ?tipo1 (getTipo 1))
+  (bind ?tipo1 (getTipo 1))
     
-    (bind ?color1 (getColor))
+  (bind ?color1 (getColor))
 
-    (assert (jugador (id 1) (tipo ?tipo1) (color ?color1)))
+  (assert (jugador (id 1) (tipo ?tipo1) (color ?color1)))
+
+  (bind ?tipo2 (getTipo 2))
+  (bind ?color2 (* ?color1 -1))
     
-    (bind ?tipo2 (getTipo 2))
-    (bind ?color2 (* ?color1 -1))
-    
-    (assert (jugador (id 1) (tipo ?tipo2) (color ?color2)))
+  (assert (jugador (id 1) (tipo ?tipo2) (color ?color2)))
     
     (assert (estado (id 0) (padre -1) (fichas (create$ 0 2 0 0 0 0 -5 0 -3 0 0 0 5 -5 0 0 0 3 0 5 0 0 0 0 -2 0)) (comidas (create$ 0 0))))
-)
-
-(defrule jugar
-    (declare (salience 25))
-    ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas))
-=>
-    (retract ?e)
-    (tirarDados)
-)
