@@ -52,6 +52,26 @@
     (return (create$ ?d1 ?d2))
 )
 
+%Imprimir en ascii art el tablero
+(deffunction imprimir(?fichas)
+  (printout t "  13   14   15      16   17    18           19   20    21    22    23    24          " crlf)
+  (printout t "+___+ +___+ +___+ +___+ +___+ +___+ +++++ +___+ +___+ +___+ +___+ +___+ +___+ | +___+" crlf)
+  (printout t "|   | |   | |   | |   | |   | |   | ||||| |   | |   | |   | |   | |   | |   | | |   |" crlf)
+  (printout t "| " (nth$ 14 ?fichas) "  | | " (nth$ 15 ?fichas) "  | | " (nth$ 16 ?fichas) " | | " (nth$ 17 ?fichas) " | | " (nth$ 18 ?fichas) " | | " (nth$ 19 ?fichas) " | ||3|| | " (nth$ 20 ?fichas) " | | " (nth$ 21 ?fichas) " | | " (nth$ 22 ?fichas) " | | " (nth$ 23 ?fichas)" | | " (nth$ 24 ?fichas) " | | " (nth$ 25 ?fichas) " | | | " (nth$ 26 ?fichas) " |" crlf)
+  (printout t "|   | |   | |   | |   | |   | |   | ||||| |   | |   | |   | |   | |   | |   | | |   |" crlf)
+  (printout t "+___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ | +___+" crlf)
+  (printout t "                                                                              |      " crlf)
+  (printout t "----------------------------------------------------------------------------- |      " crlf)
+  (printout t "                                                                              |      " crlf)
+  (printout t "+___+ +___+ +___+ +___+ +___+ +___+ +++++ +___+ +___+ +___+ +___+ +___+ +___+ | +___+" crlf)
+  (printout t "|   | |   | |   | |   | |   | |   | ||||| |   | |   | |   | |   | |   | |   | | |   |" crlf)
+  (printout t "| (nth$ 13 ?fichas) | | (nth$ 12 ?fichas) | | (nth$ 11 ?fichas) | | (nth$ 10 ?fichas) | | (nth$ 9 ?fichas) | | (nth$ 8 ?fichas) | ||3|| | (nth$ 7 ?fichas) | | (nth$ 6 ?fichas) | | (nth$ 5 ?fichas) | | (nth$ 4 ?fichas) | | (nth$ 3 ?fichas) | | (nth$ 2 ?fichas) | | | (nth$ 1 ?fichas) |" crlf)
+  (printout t "|   | |   | |   | |   | |   | |   | ||||| |   | |   | |   | |   | |   | |   | | |   |" crlf)
+  (printout t "+___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ | +___+" crlf)
+  (printout t "  12   11    10     9     8     7           6     5     4     3     2     1          " crlf)
+
+)
+
 %Rules
 (defrule inicio
 	(declare (salience 50))
@@ -79,3 +99,6 @@
     (retract ?e)
     (tirarDados)
 )
+
+
+
