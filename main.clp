@@ -51,13 +51,13 @@
     (printout t ?d2 crlf)
     (return (create$ ?d1 ?d2))
 )
-
 %Imprimir en ascii art el tablero
 (deffunction imprimir(?fichas)
+  
   (printout t "  13   14   15      16   17    18           19   20    21    22    23    24          " crlf)
   (printout t "+___+ +___+ +___+ +___+ +___+ +___+ +++++ +___+ +___+ +___+ +___+ +___+ +___+ | +___+" crlf)
   (printout t "|   | |   | |   | |   | |   | |   | ||||| |   | |   | |   | |   | |   | |   | | |   |" crlf)
-  (printout t "| " (nth$ 14 ?fichas) "  | | " (nth$ 15 ?fichas) "  | | " (nth$ 16 ?fichas) " | | " (nth$ 17 ?fichas) " | | " (nth$ 18 ?fichas) " | | " (nth$ 19 ?fichas) " | ||3|| | " (nth$ 20 ?fichas) " | | " (nth$ 21 ?fichas) " | | " (nth$ 22 ?fichas) " | | " (nth$ 23 ?fichas)" | | " (nth$ 24 ?fichas) " | | " (nth$ 25 ?fichas) " | | | " (nth$ 26 ?fichas) " |" crlf)
+  (printout t "| " (blancaonegra (nth$ 14 ?fichas)) "  | | " (blancaonegra (nth$ 15 ?fichas)) "  | | " (blancaonegra (nth$ 16 ?fichas)) " | | " (blancaonegra (nth$ 17 ?fichas)) " | | " (blancaonegra (nth$ 18 ?fichas)) " | | " (blancaonegra (nth$ 19 ?fichas)) " | ||3|| | " (blancaonegra (nth$ 20 ?fichas)) " | | " (blancaonegra (nth$ 21 ?fichas)) " | | " (blancaonegra (nth$ 22 ?fichas)) " | | " (blancaonegra (nth$ 23 ?fichas)") | | " (blancaonegra (nth$ 24 ?fichas)) " | | " (blancaonegra (nth$ 25 ?fichas)) " | | | " (blancaonegra (nth$ 26 ?fichas)) " |" crlf)
   (printout t "|   | |   | |   | |   | |   | |   | ||||| |   | |   | |   | |   | |   | |   | | |   |" crlf)
   (printout t "+___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ | +___+" crlf)
   (printout t "                                                                              |      " crlf)
@@ -65,11 +65,18 @@
   (printout t "                                                                              |      " crlf)
   (printout t "+___+ +___+ +___+ +___+ +___+ +___+ +++++ +___+ +___+ +___+ +___+ +___+ +___+ | +___+" crlf)
   (printout t "|   | |   | |   | |   | |   | |   | ||||| |   | |   | |   | |   | |   | |   | | |   |" crlf)
-  (printout t "| (nth$ 13 ?fichas) | | (nth$ 12 ?fichas) | | (nth$ 11 ?fichas) | | (nth$ 10 ?fichas) | | (nth$ 9 ?fichas) | | (nth$ 8 ?fichas) | ||3|| | (nth$ 7 ?fichas) | | (nth$ 6 ?fichas) | | (nth$ 5 ?fichas) | | (nth$ 4 ?fichas) | | (nth$ 3 ?fichas) | | (nth$ 2 ?fichas) | | | (nth$ 1 ?fichas) |" crlf)
+  (printout t "| "(blancaonegra (nth$ 13 ?fichas)") | | "(blancaonegra (nth$ 12 ?fichas)") | | "(blancaonegra (nth$ 11 ?fichas)") | | "(blancaonegra (nth$ 10 ?fichas)") | | "(blancaonegra (nth$ 9 ?fichas)") | | "(blancaonegra (nth$ 8 ?fichas)") | ||3|| | "(blancaonegra (nth$ 7 ?fichas)") | | "(blancaonegra (nth$ 6 ?fichas)") | | "(blancaonegra (nth$ 5 ?fichas)") | | "(blancaonegra (nth$ 4 ?fichas)") | | "(blancaonegra (nth$ 3 ?fichas)") | | "(blancaonegra (nth$ 2 ?fichas)") | | | "(blancaonegra (nth$ 1 ?fichas)") |" crlf)
   (printout t "|   | |   | |   | |   | |   | |   | ||||| |   | |   | |   | |   | |   | |   | | |   |" crlf)
   (printout t "+___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ +___+ | +___+" crlf)
   (printout t "  12   11    10     9     8     7           6     5     4     3     2     1          " crlf)
+  
+)
 
+(deffunction blancaonegra(?a)
+    (if (< ?a 0)
+        (return (abs ?a) "N") 
+    )
+    (return ?a "B")
 )
 
 %Rules
