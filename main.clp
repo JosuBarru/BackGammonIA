@@ -9,6 +9,7 @@
     (multislot fichas (type INTEGER) (cardinality 26 26))
     (multislot comidas (type INTEGER) (cardinality 2 2)))
 
+%Functions
 (deffunction getTipo (?num)
     (printout t "Elige el tipo de jugador " ?num " (humano/cpu): " crlf)
     (bind ?tipo (read))
@@ -37,9 +38,20 @@
     else
         (bind ?c -1)
 
-    (return ?c)))
+    (return ?c))
+)
 
+(deffunction tirarDados ()
+    (bind ?d1 (random 1 6))
+    (printout t ?d1 crlf)
 
+    (seed (round (time))) 
+    (bind ?d2 (random 1 6))
+    (printout t ?d2 crlf)
+    (return (create$ ?d1 ?d2))
+)
+
+%Rules
 (defrule inicio
 	(declare (salience 50))
     ?i<-(initial-fact)
@@ -58,3 +70,12 @@
     (assert (jugador (id 1) (tipo ?tipo2) (color ?color2)))
     
     (assert (estado (id 0) (padre -1) (fichas (create$ 0 2 0 0 0 0 -5 0 -3 0 0 0 5 -5 0 0 0 3 0 5 0 0 0 0 -2 0)) (comidas (create$ 0 0))))
+)
+
+(defrule jugar
+    (declare (salience 25))
+    ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas))
+=>
+    (retract ?e)
+    (tirarDados)
+)
