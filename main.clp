@@ -70,4 +70,12 @@
     
   (assert (jugador (id 1) (tipo ?tipo2) (color ?color2)))
     
-    (assert (estado (id 0) (padre -1) (fichas (create$ 0 2 0 0 0 0 -5 0 -3 0 0 0 5 -5 0 0 0 3 0 5 0 0 0 0 -2 0)) (comidas (create$ 0 0))))
+    (assert (estado (id 0) (padre -1) (fichas (create$ 0 2 0 0 0 0 -5 0 -3 0 0 0 5 -5 0 0 0 3 0 5 0 0 0 0 -2 0)) (comidas (create$ 0 0)))))
+
+(defrule jugar
+    (declare (salience 25))
+    ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas))
+=>
+    (retract ?e)
+    (tirarDados)
+)
