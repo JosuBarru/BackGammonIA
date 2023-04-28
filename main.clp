@@ -10,7 +10,7 @@
     (multislot fichas (type INTEGER) (cardinality 26 26))
     (multislot comidas (type INTEGER) (cardinality 2 2)))
 
-%Functions
+;Functions
 (deffunction getTipo (?num)
     (printout t "Elige el tipo de jugador " ?num " (humano/cpu): " crlf)
     (bind ?tipo (read))
@@ -43,16 +43,49 @@
 )
 
 (deffunction tirarDados ()
-    (bind ?d1 (random 1 6))
-    (printout t ?d1 crlf)
-
     (seed (round (time))) 
+
+    (bind ?d1 (random 1 6))
     (bind ?d2 (random 1 6))
-    (printout t ?d2 crlf)
+    
+    (printout t "Dados: " ?d1 " , " ?d2 crlf)
     (return (create$ ?d1 ?d2))
 )
 
-%Rules
+;Imprimir en ascii art el tablero
+(deffunction blancaonegra(?a)
+    (if (< ?a 0) then
+        (return (str-cat (abs ?a) "N")) 
+    )
+    (return (str-cat ?a "B"))
+)
+
+(deffunction imprimir(?fichas)
+  
+  (printout t "  13     14     15     16     17     18            19     20     21     22     23     24           " crlf)
+  (printout t "+____+ +____+ +____+ +____+ +____+ +____+ ++++++ +____+ +____+ +____+ +____+ +____+ +____+ | +____+" crlf)
+  (printout t "|    | |    | |    | |    | |    | |    | |||||| |    | |    | |    | |    | |    | |    | | |    |" crlf)
+  (printout t "| " (blancaonegra (nth$ 14 ?fichas)) " | | " (blancaonegra (nth$ 15 ?fichas)) " | | "(blancaonegra (nth$ 16 ?fichas)) " | | " (blancaonegra (nth$ 17 ?fichas)) " | | " (blancaonegra (nth$ 18 ?fichas)) " | | " (blancaonegra (nth$ 19 ?fichas)) " | ||3||| | " (blancaonegra (nth$ 20 ?fichas)) " | | " (blancaonegra (nth$ 21 ?fichas)) " | | " (blancaonegra (nth$ 22 ?fichas)) " | | " (blancaonegra (nth$ 23 ?fichas)) " | | " (blancaonegra (nth$ 24 ?fichas)) " | | " (blancaonegra (nth$ 25 ?fichas)) " | | | " (blancaonegra (nth$ 26 ?fichas)) " |" crlf)
+  (printout t "|    | |    | |    | |    | |    | |    | |||||| |    | |    | |    | |    | |    | |    | | |    |" crlf)
+  (printout t "+____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ | +____+" crlf)
+  (printout t "                                                                                           |      " crlf)
+  (printout t "------------------------------------------------------------------------------------------ |      " crlf)
+  (printout t "                                                                                           |      " crlf)
+  (printout t "+____+ +____+ +____+ +____+ +____+ +____+ ++++++ +____+ +____+ +____+ +____+ +____+ +____+ | +____+" crlf)
+  (printout t "|    | |    | |    | |    | |    | |    | |||||| |    | |    | |    | |    | |    | |    | | |    |" crlf)
+  (printout t "| "(blancaonegra (nth$ 13 ?fichas))" | | "(blancaonegra (nth$ 12 ?fichas))" | | "(blancaonegra (nth$ 11 ?fichas))" | | "(blancaonegra (nth$ 10 ?fichas))" | | "(blancaonegra (nth$ 9 ?fichas))" | | "(blancaonegra (nth$ 8 ?fichas))" | ||3||| | "(blancaonegra (nth$ 7 ?fichas))" | | "(blancaonegra (nth$ 6 ?fichas))" | | "(blancaonegra (nth$ 5 ?fichas))" | | "(blancaonegra (nth$ 4 ?fichas))" | | "(blancaonegra (nth$ 3 ?fichas))" | | "(blancaonegra (nth$ 2 ?fichas))" | | | "(blancaonegra (nth$ 1 ?fichas))" |" crlf)
+  (printout t "|    | |    | |    | |    | |    | |    | |||||| |    | |    | |    | |    | |    | |    | | |    |" crlf)
+  (printout t "+____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ | +____+" crlf)
+  (printout t "  12     11     10     9      8      7             6      5      4      3      2      1          " crlf)
+  
+)
+
+(deffunction movimiento (?d ?color)
+    (printout t "Movimiento para dado 1, nº de posiciones: " ?d crlf)
+    (printout t "Elige casilla de la que mover una ficha: ")
+)
+
+;Rules
 (defrule inicio
 	(declare (salience 50))
     ?i<-(initial-fact)
@@ -77,5 +110,6 @@
     ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas))
 =>
     (retract ?e)
-    (tirarDados)
+    (imprimir ?fichas)
+    (bind $?d (tirarDados))
 )
