@@ -112,3 +112,6 @@
     (imprimir ?fichas)
     (bind $?d (tirarDados))
 )
+
+
+
