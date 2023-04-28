@@ -56,15 +56,18 @@
     (if (< ?a 0) then
         (return (str-cat (abs ?a) "N")) 
     )
+    (if (= ?a 0) then
+        (return 0)
+    )
     (return (str-cat ?a "B"))
 )
 
-(deffunction imprimir(?fichas)
+(deffunction imprimir(?fichas ?comidas)
   
   (printout t "  13     14     15     16     17     18            19     20     21     22     23     24           " crlf)
   (printout t "+____+ +____+ +____+ +____+ +____+ +____+ ++++++ +____+ +____+ +____+ +____+ +____+ +____+ | +____+" crlf)
   (printout t "|    | |    | |    | |    | |    | |    | |||||| |    | |    | |    | |    | |    | |    | | |    |" crlf)
-  (printout t "| " (blancaonegra (nth$ 14 ?fichas)) " | | " (blancaonegra (nth$ 15 ?fichas)) " | | "(blancaonegra (nth$ 16 ?fichas)) " | | " (blancaonegra (nth$ 17 ?fichas)) " | | " (blancaonegra (nth$ 18 ?fichas)) " | | " (blancaonegra (nth$ 19 ?fichas)) " | ||3||| | " (blancaonegra (nth$ 20 ?fichas)) " | | " (blancaonegra (nth$ 21 ?fichas)) " | | " (blancaonegra (nth$ 22 ?fichas)) " | | " (blancaonegra (nth$ 23 ?fichas)) " | | " (blancaonegra (nth$ 24 ?fichas)) " | | " (blancaonegra (nth$ 25 ?fichas)) " | | | " (blancaonegra (nth$ 26 ?fichas)) " |" crlf)
+  (printout t "| " (blancaonegra (nth$ 14 ?fichas)) " | | " (blancaonegra (nth$ 15 ?fichas)) " | | "(blancaonegra (nth$ 16 ?fichas)) " | | " (blancaonegra (nth$ 17 ?fichas)) " | | " (blancaonegra (nth$ 18 ?fichas)) " | | " (blancaonegra (nth$ 19 ?fichas)) " | ||" (blancaonegra (nth$ 1 ?comidas)) "|| | " (blancaonegra (nth$ 20 ?fichas)) " | | " (blancaonegra (nth$ 21 ?fichas)) " | | " (blancaonegra (nth$ 22 ?fichas)) " | | " (blancaonegra (nth$ 23 ?fichas)) " | | " (blancaonegra (nth$ 24 ?fichas)) " | | " (blancaonegra (nth$ 25 ?fichas)) " | | | " (blancaonegra (nth$ 26 ?fichas)) " |" crlf)
   (printout t "|    | |    | |    | |    | |    | |    | |||||| |    | |    | |    | |    | |    | |    | | |    |" crlf)
   (printout t "+____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ | +____+" crlf)
   (printout t "                                                                                           |      " crlf)
@@ -72,7 +75,7 @@
   (printout t "                                                                                           |      " crlf)
   (printout t "+____+ +____+ +____+ +____+ +____+ +____+ ++++++ +____+ +____+ +____+ +____+ +____+ +____+ | +____+" crlf)
   (printout t "|    | |    | |    | |    | |    | |    | |||||| |    | |    | |    | |    | |    | |    | | |    |" crlf)
-  (printout t "| "(blancaonegra (nth$ 13 ?fichas))" | | "(blancaonegra (nth$ 12 ?fichas))" | | "(blancaonegra (nth$ 11 ?fichas))" | | "(blancaonegra (nth$ 10 ?fichas))" | | "(blancaonegra (nth$ 9 ?fichas))" | | "(blancaonegra (nth$ 8 ?fichas))" | ||3||| | "(blancaonegra (nth$ 7 ?fichas))" | | "(blancaonegra (nth$ 6 ?fichas))" | | "(blancaonegra (nth$ 5 ?fichas))" | | "(blancaonegra (nth$ 4 ?fichas))" | | "(blancaonegra (nth$ 3 ?fichas))" | | "(blancaonegra (nth$ 2 ?fichas))" | | | "(blancaonegra (nth$ 1 ?fichas))" |" crlf)
+  (printout t "| "(blancaonegra (nth$ 13 ?fichas))" | | "(blancaonegra (nth$ 12 ?fichas))" | | "(blancaonegra (nth$ 11 ?fichas))" | | "(blancaonegra (nth$ 10 ?fichas))" | | "(blancaonegra (nth$ 9 ?fichas))" | | "(blancaonegra (nth$ 8 ?fichas))" | ||" (blancaonegra (nth$ 2 ?comidas)) "|| | "(blancaonegra (nth$ 7 ?fichas))" | | "(blancaonegra (nth$ 6 ?fichas))" | | "(blancaonegra (nth$ 5 ?fichas))" | | "(blancaonegra (nth$ 4 ?fichas))" | | "(blancaonegra (nth$ 3 ?fichas))" | | "(blancaonegra (nth$ 2 ?fichas))" | | | "(blancaonegra (nth$ 1 ?fichas))" |" crlf)
   (printout t "|    | |    | |    | |    | |    | |    | |||||| |    | |    | |    | |    | |    | |    | | |    |" crlf)
   (printout t "+____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ | +____+" crlf)
   (printout t "  12     11     10     9      8      7             6      5      4      3      2      1          " crlf)
@@ -121,7 +124,7 @@
 
 ;Rules
 (defrule inicio
-	(declare (salience 50))
+	;(declare (salience 50))
     ?i<-(initial-fact)
 =>
 	(retract ?i)
@@ -140,13 +143,12 @@
   (assert (estado (id 0) (padre -1) (fichas (create$ 0 -2 0 0 0 0 5 0 3 0 0 0 -5 5 0 0 0 -3 0 -5 0 0 0 0 2 0)) (comidas (create$ 0 0)))))
 
 (defrule jugar
-    (declare (salience 25))
+    ;(declare (salience 25))
     ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas))
 =>
     (retract ?e)
     (imprimir ?fichas)
     (bind $?d (tirarDados))
-    (printout t "Dado 1: " crlf)
     (movimiento 1 (nth$ 1 $?d) ?fichas)
     (imprimir ?fichas)
 )
