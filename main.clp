@@ -76,13 +76,48 @@
   (printout t "|    | |    | |    | |    | |    | |    | |||||| |    | |    | |    | |    | |    | |    | | |    |" crlf)
   (printout t "+____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ +____+ | +____+" crlf)
   (printout t "  12     11     10     9      8      7             6      5      4      3      2      1          " crlf)
+  (printout t crlf)
   
 )
 
-(deffunction movimiento (?d ?color)
-    (printout t "Movimiento para dado 1, nº de posiciones: " ?d crlf)
-    (printout t "Elige casilla de la que mover una ficha: ")
+(deffunction movimientoLegal (?color ?d ?vieja ?nueva ?fichas)
+     (if (!= (* (- ?vieja ?nueva) ?color) ?d) then
+         (return FALSE)
+     )
+     (if (< (* (nth$ (+ ?nueva 1) ?fichas) ?color) -1) then
+        (return FALSE)
+     )
+    (return TRUE)
 )
+
+;Hacer Legal Actions terminar movimiento legal
+
+(deffunction movimiento (?color ?d ?fichas)
+
+    (printout t "Numero de posiciones que puedes mover: " ?d crlf)
+    (printout t "Elige la casilla de la que mover una ficha: ")
+    (bind ?salida (read))
+    (while (<= (*  (nth$ (+ ?salida 1) ?fichas) ?color) 0)
+        (printout t "En la casilla " ?salida " no tienes fichas de tu color, escoge otra:" crlf)
+        (bind ?salida (read))
+    )
+
+    (printout t crlf)
+    (printout t "Elige la casilla a la que mover la ficha: ")
+    (bind ?llegada (read))
+    (while (not (movimientoLegal ?color ?d ?salida ?llegada ?fichas))
+        (printout t "El movimiento no se puede realizar, escge otra casilla:" crlf)
+        (bind ?llegada (read))
+    )
+    (bind ?fichas (replace$ ?fichas (+ ?salida 1) (+ ?salida 1) (- (nth$ (+ ?salida 1) ?fichas) ?color)))
+    (bind ?fichas(replace$ ?fichas (+ ?llegada 1) (+ ?llegada 1) (+ (nth$ (+ ?llegada 1) ?fichas) ?color)))
+    (printout t ?fichas crlf)
+
+    (return ?fichas)
+
+
+)
+
 
 ;Rules
 (defrule inicio
@@ -102,7 +137,7 @@
     
   (assert (jugador (id 1) (tipo ?tipo2) (color ?color2)))
     
-    (assert (estado (id 0) (padre -1) (fichas (create$ 0 2 0 0 0 0 -5 0 -3 0 0 0 5 -5 0 0 0 3 0 5 0 0 0 0 -2 0)) (comidas (create$ 0 0)))))
+  (assert (estado (id 0) (padre -1) (fichas (create$ 0 -2 0 0 0 0 5 0 3 0 0 0 -5 5 0 0 0 -3 0 -5 0 0 0 0 2 0)) (comidas (create$ 0 0)))))
 
 (defrule jugar
     (declare (salience 25))
@@ -111,7 +146,7 @@
     (retract ?e)
     (imprimir ?fichas)
     (bind $?d (tirarDados))
+    (printout t "Dado 1: " crlf)
+    (movimiento 1 (nth$ 1 $?d) ?fichas)
+    (imprimir ?fichas)
 )
-
-
-
