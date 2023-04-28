@@ -147,8 +147,7 @@
     ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas))
 =>
     (retract ?e)
-    (imprimir ?fichas)
+    (imprimir ?fichas ?comidas)
     (bind $?d (tirarDados))
     (movimiento 1 (nth$ 1 $?d) ?fichas)
-    (imprimir ?fichas)
 )
