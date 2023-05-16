@@ -210,21 +210,27 @@
     (movimiento (origen ?) (destino ?)); si solo hay uno ni preguntar
     (test (= (str-compare ?jug humano) 0))
     =>  
-    (printout t "Dime la casilla de origen:")
+    (printout t "Dime la casilla de origen:" )
     (bind ?origen (read))
-    ;(while (not (((?m movimiento)) (eq ?m:origen ?origen))))
-    ;     (printout t ?origen " NO es ninguna de las opciones permitidas" crlf)
-    ;     (printout t "Dime la casilla de origen:")
-    ;     (bind ?origen (read))
-    ; )
+
+    (while (not(any-factp ((?m movimiento)) (eq ?m:origen ?origen)))
+         (printout t ?origen " NO es ninguna de las opciones permitidas" crlf)  ;Bucle que comprueba si el origen es una opcion
+         (printout t "Dime la casilla de origen:")
+         (bind ?origen (read))
+    )
     (printout t "Posibles destinos: ")
     (do-for-all-facts ((?m movimiento)) (eq ?m:origen ?origen) ;Imprime todos los que tienen el origen dado
-        (printout t ?m:destino ", " crlf)
+        (printout t ?m:destino ", ")
     )
     (printout t crlf)
     (printout t "Dime la casilla de destino: ")
     (bind ?destino (read)) 
-    ; Ralizamos comprobacion?
+
+    (while (not(any-factp ((?m movimiento)) (and (eq ?m:origen ?origen) (eq ?m:destino ?destino))))
+         (printout t ?destino " NO es ninguna de las opciones permitidas" crlf) ;Bucle que comprueba si el destino es una opcion
+         (printout t "Dime la casilla de destino:" )
+         (bind ?destino (read))
+    )
     (printout t "realizar movimiento de la ficha en " ?origen " a " ?destino crlf)
     (do-for-all-facts ((?m movimiento))
        (retract ?m)
