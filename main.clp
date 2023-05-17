@@ -230,14 +230,9 @@
     ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas ?x 0) (turno -1) (jugador ?))
     ?d <- (dado (d1 ?d1))
     =>  
-    (bind ?final true)
-    (foreach ?f (?fichas)
-        (if (< ?f 19)) then
-            (bind ?final true)
-        )
-    )
     (salidas ?fichas ?d1 -1)
 )
+
 
 
 (defrule eleccion 
@@ -246,30 +241,41 @@
     (movimiento (origen ?) (destino ?)); si solo hay uno ni preguntar
     (test (= (str-compare ?jug humano) 0))
     =>  
-    (printout t "Dime la casilla de origen:" )
-    (bind ?origen (read))
+    (if (>=(length (find-all-facts ((?m movimiento)) TRUE)) 2) then
+        (printout t "Dime la casilla de origen:" )
+        (bind ?origen (read))
 
-    (while (not(any-factp ((?m movimiento)) (eq ?m:origen ?origen)))
-         (printout t ?origen " NO es ninguna de las opciones permitidas" crlf)  ;Bucle que comprueba si el origen es una opcion
-         (printout t "Dime la casilla de origen:")
-         (bind ?origen (read))
-    )
-    (printout t "Posibles destinos: ")
-    (do-for-all-facts ((?m movimiento)) (eq ?m:origen ?origen) ;Imprime todos los que tienen el origen dado
-        (printout t ?m:destino ", ")
-    )
-    (printout t crlf)
-    (printout t "Dime la casilla de destino: ")
-    (bind ?destino (read)) 
+        (while (not(any-factp ((?m movimiento)) (eq ?m:origen ?origen)))
+            (printout t ?origen " NO es ninguna de las opciones permitidas" crlf)  ;Bucle que comprueba si el origen es una opcion
+            (printout t "Dime la casilla de origen:")
+            (bind ?origen (read))
+        )
+        (printout t "Posibles destinos: ")
+        (do-for-all-facts ((?m movimiento)) (eq ?m:origen ?origen) ;Imprime todos los que tienen el origen dado
+            (printout t ?m:destino ", ")
+        )
+        (printout t crlf)
+        (printout t "Dime la casilla de destino: ")
+        (bind ?destino (read)) 
 
-    (while (not(any-factp ((?m movimiento)) (and (eq ?m:origen ?origen) (eq ?m:destino ?destino))))
-         (printout t ?destino " NO es ninguna de las opciones permitidas" crlf) ;Bucle que comprueba si el destino es una opcion
-         (printout t "Dime la casilla de destino:" )
-         (bind ?destino (read))
-    )
-    (printout t "realizar movimiento de la ficha en " ?origen " a " ?destino crlf)
-    (do-for-all-facts ((?m movimiento))
-       (retract ?m)
+        (while (not(any-factp ((?m movimiento)) (and (eq ?m:origen ?origen) (eq ?m:destino ?destino))))
+            (printout t ?destino " NO es ninguna de las opciones permitidas" crlf) ;Bucle que comprueba si el destino es una opcion
+            (printout t "Dime la casilla de destino:" )
+            (bind ?destino (read))
+        )
+        (printout t "realizar movimiento de la ficha en " ?origen " a " ?destino crlf)
+        (do-for-all-facts ((?m movimiento))
+        (retract ?m)
+        )
+    else
+
+        (do-for-fact ((?m movimiento)) TRUE
+            (bind ?origen ?m:origen)
+            (bind ?destino ?m:destino)
+            (printout t "realizar movimiento de la ficha en " ?origen " a " ?destino crlf)
+            (retract ?m)
+        )
+
     )
     (retract ?e)
 
