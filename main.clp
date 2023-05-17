@@ -11,14 +11,22 @@
     (slot turno (type INTEGER)(allowed-integers -1 1))
     (slot jugador (type SYMBOL)))
 
-
-(deftemplate movimiento
-    (slot origen (type INTEGER)(range 0 25)) ;De 1 a 24 son las casillas del tablero, 25 es la casilla de blancas comidas y 0 la de negras comidas 
-    (slot destino (type INTEGER)(range 1 26))) ;De 1 a 24 son las casillas del tablero, 25 es la casilla de la meta de blancas y 26 la de negras 
-
 (deftemplate dado
     (slot d1 (type INTEGER)(range 1 6))
     (slot id (type INTEGER) (range 1 4)))
+
+
+(deftemplate movimiento
+    (slot origen (type INTEGER)(range 0 25)) ;De 1 a 24 son las casillas del tablero, 25 es la casilla de blancas comidas y 0 la de negras comidas 
+    (slot destino (type INTEGER)(range 1 26)) ;De 1 a 24 son las casillas del tablero, 25 es la casilla de la meta de blancas y 26 la de negras 
+    (slot dado (type INTEGER)(range 1 6)))
+
+(deftemplate movimientofinal
+    (slot origen (type INTEGER)(range 0 25))
+    (slot destino (type INTEGER)(range 1 26))
+    (slot dado (type INTEGER)(range 1 6))
+)
+
 
 
 (deffunction getTipo (?num)
@@ -94,7 +102,7 @@
 
     (if (>  (* ?turno (nth$ ?destino  ?fichas)) -2) then ;Mira si tiene dos o más fichas contrarias la casilla destino
         (printout t "Salida: " ?salida " Destino: " ?destino crlf)
-        (assert (movimiento  (origen ?salida) (destino ?destino)))
+        (assert (movimiento  (origen ?salida) (destino ?destino) (dado ?dado)))
         (return 0)
     )
 
@@ -216,15 +224,14 @@
 
     (if (eq ?destino 0) then
         (printout t "Salida: " ?salida " Destino: Meta blanca (25)"  crlf)
-        (assert (movimiento  (origen ?salida) (destino 25)))
-        (return 0)
+        (assert (movimiento  (origen ?salida) (destino 25) (dado ?dado)))
+        (return 0) 
     )
 
     (if (>  (nth$ ?destino ?fichas) -2) then ;Mira si tiene dos o más fichas contrarias la casilla destino
         (printout t "Salida: " ?salida " Destino: " ?destino crlf)
-        (assert (movimiento  (origen ?salida) (destino ?destino)))
+        (assert (movimiento  (origen ?salida) (destino ?destino) (dado ?dado)))
     )
-    
 )
 
 (deffunction destinosmeta2(?salida ?fichas ?dado)
@@ -237,13 +244,13 @@
 
     (if (eq ?destino 25) then
         (printout t "Salida: " ?salida " Destino: Meta negra (26)"  crlf)
-        (assert (movimiento  (origen ?salida) (destino 26)))
+        (assert (movimiento  (origen ?salida) (destino 26) (dado ?dado)))
         (return 0)
     )
 
     (if (< (nth$ ?destino ?fichas) 2) then
        (printout t "Salida: " ?salida " Destino: " ?destino crlf)
-        (assert (movimiento  (origen ?salida) (destino ?destino)))
+        (assert (movimiento  (origen ?salida) (destino ?destino) (dado ?dado)))
     )
 )
 
@@ -271,7 +278,7 @@
     (loop-for-count (?i 1 6)
         (if (>  (nth$ ?i ?fichas) 0) then
             (printout t "Salida: " ?i " Destino: Meta blanca (25)"  crlf)
-            (assert (movimiento  (origen ?i) (destino 25)))
+            (assert (movimientofinal  (origen ?i) (destino 25) (dado ?dado)))
         )
     )
    
@@ -281,10 +288,113 @@
     (loop-for-count (?i 19 24)
         (if (< (nth$ ?i ?fichas) 0) then
             (printout t "Salida: " ?i " Destino: Meta negra (26)"  crlf)
-            (assert (movimiento  (origen ?i) (destino 26)))        
+            (assert (movimientofinal  (origen ?i) (destino 26)  (dado ?dado)))        
         )
     )
    
+)
+
+(deffunction ultimo_cuadrante1($?fichas); para blancas funcion para saber si estan todas en el ultimo cuadrante
+    (bind ?num 0); para saber si estan todas en el ultimo cuadrante
+    (bind ?pos_lejana); para saber si podemos meter aunque no sean exactos
+    (loop-for-count (?f 1 6)
+        (bind ?fi_casilla (nth$ ?f ?fichas)); numero de fichass en la casilla
+        (if (> ?fi_casilla 0) then ; solo si las fichas son blancas se suman
+            (bind ?num (+ ?num ?fi_casilla))
+            (bind ?pos_lejana ?f)
+        )
+    )
+    (bind ?num (+ ?num (nth$ 25 ?fichas))); sumamos las fichas que estan en la meta
+    (printout t "para debug: numero de fichas en el ultimo cuadrante: " ?num crlf)
+    (printout t "para debug: posicion mas lejana: " ?pos_lejana crlf)
+
+    (if (eq ?num 15) then
+        (return (create$ TRUE ?pos_lejana))
+    )
+    (return (create$ FALSE ?pos_lejana))
+    
+)
+
+(deffunction ultimo_cuadrante2($?fichas); para negras funcion para saber si estan todas en el ultimo cuadrante
+    (bind ?num 0); para saber si estan todas en el ultimo cuadrante
+    (bind ?pos_lejana); para saber si podemos meter aunque no sean exactos
+    (foreach ?f (create$ 24 23 22 21 20 19); orden inverso para conseguir la mas lejana
+        (bind ?fi_casilla (nth$ ?f ?fichas)); numero de fichass en la casilla
+        (if (< ?fi_casilla 0) then ; solo si las fichas son blancas se suman
+            (bind ?num (+ ?num ?fi_casilla))
+            (bind ?pos_lejana ?f)
+        )
+    )
+
+    (bind ?num (+ ?num (nth$ 26 ?fichas))); sumamos las fichas que estan en la meta
+     (printout t "para debug: numero de fichas en el ultimo cuadrante: " ?num crlf)
+    (printout t "para debug: posicion mas lejana: " ?pos_lejana crlf)
+
+    (if (eq ?num -15) then
+        (return (create$ TRUE ?pos_lejana))
+    )
+    (return (create$ FALSE ?pos_lejana))
+)
+
+
+;Agente Inteligente
+
+(deffunction evaluarBlancas (?fichas ?comidas ?dados)
+    (bind ?puntuacion 0)
+    (bind ?puntuacion (- ?puntuacion (* (nth$ 1 ?comidas) 10))) ;Restamos por piezas que nos han comido
+    (bind ?puntuacion (+ ?puntuacion (* (nth$ 2 ?comidas) 10))) ;Sumamos por piezas que comemos
+
+    (bind ?puntuacion (+ ?puntuacion (* (nth$ 25 ?fichas) 15))) ;Sumamos por las piezas que hayan llegado al final
+    (bind ?puntuacion (- ?puntuacion (* (nth$ 26 ?fichas) 15))) ;Restamos por las piezas rivales que hayan llegado al final
+
+    (loop-for-count (?i 1 24)
+        (if (> (nth$ ?i ?fichas) 0) then
+            (bind ?puntuacion (- ?puntuacion (* (nth$ ?i ?fichas) ?i))) ;Restamos la distancia total de las blancas a la meta
+        else 
+            (if (< (nth$ ?i ?fichas) 0) then
+                (bind ?puntuacion (+ ?puntuacion (* (nth$ ?i ?fichas) (- 25 ?i)))) ;Sumamos la distancia total de las negras a la meta
+            )
+        )
+    )
+
+    (if (any-factp ((?e estado)) (> ?e:fichas 6)) then
+        (bind ?puntuacion (+ ?puntuacion 50))            ; Sumamos 50 si ya podemos meter las blancas en la meta
+    )
+
+    (if (any-factp ((?e estado)) (< ?e:fichas 19)) then
+        (bind ?puntuacion (- ?puntuacion 50))            ; Restamos 50 si ya podemos meter las negras en la meta
+    )
+
+    (return ?puntuacion)
+)
+
+(deffunction evaluarNegras (?fichas ?comidas)
+    (bind ?puntuacion 0)
+    (bind ?puntuacion (- ?puntuacion (* (nth$ 2 ?comidas) 10))) ;Restamos por piezas que nos han comido
+    (bind ?puntuacion (+ ?puntuacion (* (nth$ 1 ?comidas) 10))) ;Sumamos por piezas que comemos
+
+    (bind ?puntuacion (+ ?puntuacion (* (nth$ 25 ?fichas) 15))) ;Sumamos por las piezas que hayan llegado al final
+    (bind ?puntuacion (- ?puntuacion (* (nth$ 26 ?fichas) 15))) ;Restamos por las piezas rivales que hayan llegado al final
+
+    (loop-for-count (?i 1 24)
+        (if (< (nth$ ?i ?fichas) 0) then
+            (bind ?puntuacion (- ?puntuacion (* (nth$ ?i ?fichas) (- 25 ?i)))) ;Restamos la distancia total de las negras a la meta
+        else 
+            (if (> (nth$ ?i ?fichas) 0) then
+                (bind ?puntuacion (+ ?puntuacion (* (nth$ ?i ?fichas) ?i))) ;Sumamos la distancia total de las blancas a la meta
+            )
+        )
+    )
+
+    (if (any-factp ((?e estado)) (< ?e:fichas 19)) then
+        (bind ?puntuacion (+ ?puntuacion 50))            ; Sumamos 50 si ya podemos meter las negras en la meta
+    )
+
+    (if (any-factp ((?e estado)) (> ?e:fichas 6)) then
+        (bind ?puntuacion (- ?puntuacion 50))            ; Restamos 50 si ya podemos meter las blancas en la meta
+    )
+
+    (return ?puntuacion)
 )
 
 
@@ -305,7 +415,10 @@
     
   (assert (jugador (id 2) (tipo ?tipo2) (color ?color2)))
     
-  (assert (estado (id -1) (padre -2) (fichas (create$ -2 0 0 0 0 5 0 3 0 0 0 -5 5 0 0 0 -3 0 -5 0 0 0 0 2 0 0)) (comidas (create$ 0 0)) (turno -1) (jugador ?tipo1)))
+;   (assert (estado (id -1) (padre -2) (fichas (create$ -2 0 0 0 0 5 0 3 0 0 0 -5 5 0 0 0 -3 0 -5 0 0 0 0 2 0 0)) (comidas (create$ 0 0)) (turno -1) (jugador ?tipo1)))
+
+    (assert (estado (id -1) (padre -2) (fichas (create$ 5 0 5 0 5 0 0 0 0 0 0 0 0 0 0 0 0 -5 0  -5 0 0 -5 0 0 0)) (comidas (create$ 0 0)) (turno -1) (jugador ?tipo1)))
+
   )
 
 
@@ -381,22 +494,12 @@
     ?d <- (dado (d1 ?d1))
     =>  
     ;mirar que las fichas no esten todas en el ultimo cuadrante de las blancas
-    (bind ?num 0); para saber si estan todas en el ultimo cuadrante
-    (bind ?pos_lejana); para saber si podemos meter aunque no sean exactos
-    (loop-for-count (?f 1 6)
-        (bind ?fi_casilla (nth$ ?f ?fichas)); numero de fichass en la casilla
-        (if (> ?fi_casilla 0) then ; solo si las fichas son blancas se suman
-            (bind ?num (+ ?num ?fi_casilla))
-            (bind ?pos_lejana ?f)
-        )
-    )
-    (bind ?num (+ ?num (nth$ 25 ?fichas))); sumamos las fichas que estan en la meta
-    (printout t "para debug: numero de fichas en el ultimo cuadrante: " ?num crlf)
-    (printout t "para debug: posicion mas lejana: " ?pos_lejana crlf)
-    (if (< ?num 15) then
+    (bind $?res (ultimo_cuadrante1 ?fichas))
+
+    (if (eq (nth$ 1 ?res) FALSE) then
         (printout t "no es final" crlf)
         (salidas ?fichas ?d1 1)
-    else (if (< ?pos_lejana  ?d1) then
+    else (if (< (nth$ 2 ?res)  ?d1) then
             (movimiento_libre_final1 ?fichas ?d1)
         else
             (salidasmeta1 ?fichas ?d1)
@@ -410,25 +513,14 @@
     ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas ?x 0) (turno -1) (jugador ?))
     ?d <- (dado (d1 ?d1))
     =>  
-    (bind ?num 0); para saber si estan todas en el ultimo cuadrante
-    (bind ?pos_lejana); para saber si podemos meter aunque no sean exactos
-    (foreach ?f (create$ 24 23 22 21 20 19); orden inverso para conseguir la mas lejana
-        (bind ?fi_casilla (nth$ ?f ?fichas)); numero de fichass en la casilla
-        (if (< ?fi_casilla 0) then ; solo si las fichas son blancas se suman
-            (bind ?num (+ ?num ?fi_casilla))
-            (bind ?pos_lejana ?f)
-        )
-    )
+    
+    (bind $?res (ultimo_cuadrante2 ?fichas))
 
-    (bind ?num (+ ?num (nth$ 26 ?fichas))); sumamos las fichas que estan en la meta
-     (printout t "para debug: numero de fichas en el ultimo cuadrante: " ?num crlf)
-    (printout t "para debug: posicion mas lejana: " ?pos_lejana crlf)
-    (if (> ?num -15) then
+    (if (eq (nth$ 1 ?res) FALSE) then
         (printout t "no es final" crlf)
         (salidas ?fichas ?d1 -1)
-    else (if (< (+ ?pos_lejana ?d1) 25) then
+    else (if (< (+ (nth$ 2 ?res) ?d1) 25) then
             (movimiento_libre_final2 ?fichas ?d1)
-            (retract ?d)
         else
             (salidasmeta2 ?fichas ?d1)
          )
@@ -446,55 +538,73 @@
 
 
 (defrule eleccion 
-    (declare (salience 10))
+    (declare (salience 20))
     ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas) (turno ?t) (jugador ?jug))
-    (movimiento (origen ?) (destino ?)); si solo hay uno ni preguntar
+    (movimiento (origen ?) (destino ?) (dado ?d)); si solo hay uno ni preguntar
     (test (= (str-compare ?jug humano) 0))
     =>  
-    (printout t "Dime la casilla de origen:" )
-    (bind ?origen (read))
+    (if (>=(length (find-all-facts ((?m movimiento)) TRUE)) 2) then
+        (printout t "Dime la casilla de origen:" )
+        (bind ?origen (read))
 
-    (while (not(any-factp ((?m movimiento)) (eq ?m:origen ?origen)))
-         (printout t ?origen " NO es ninguna de las opciones permitidas" crlf)  ;Bucle que comprueba si el origen es una opcion
-         (printout t "Dime la casilla de origen:")
-         (bind ?origen (read))
-    )
-    (printout t "Posibles destinos: ")
-    (do-for-all-facts ((?m movimiento)) (eq ?m:origen ?origen) ;Imprime todos los que tienen el origen dado
-        (printout t ?m:destino ", ")
-    )
-    (printout t crlf)
-    (printout t "Dime la casilla de destino: ")
-    (bind ?destino (read)) 
+        (while (not(any-factp ((?m movimiento)) (eq ?m:origen ?origen)))
+            (printout t ?origen " NO es ninguna de las opciones permitidas" crlf)  ;Bucle que comprueba si el origen es una opcion
+            (printout t "Dime la casilla de origen:")
+            (bind ?origen (read))
+        )
+        (printout t "Posibles destinos: ")
+        (do-for-all-facts ((?m movimiento)) (eq ?m:origen ?origen) ;Imprime todos los que tienen el origen dado
+            (printout t ?m:destino ", ")
+        )
+        (printout t crlf)
+        (printout t "Dime la casilla de destino: ")
+        (bind ?destino (read)) 
 
-    (while (not(any-factp ((?m movimiento)) (and (eq ?m:origen ?origen) (eq ?m:destino ?destino))))
-         (printout t ?destino " NO es ninguna de las opciones permitidas" crlf) ;Bucle que comprueba si el destino es una opcion
-         (printout t "Dime la casilla de destino:" )
-         (bind ?destino (read))
-    )
-    (printout t "realizar movimiento de la ficha en " ?origen " a " ?destino crlf)
-    (do-for-all-facts ((?m movimiento))
-       (retract ?m)
+        (while (not(any-factp ((?m movimiento)) (and (eq ?m:origen ?origen) (eq ?m:destino ?destino))))
+            (printout t ?destino " NO es ninguna de las opciones permitidas" crlf) ;Bucle que comprueba si el destino es una opcion
+            (printout t "Dime la casilla de destino:" )
+            (bind ?destino (read))
+        )
+        (printout t "realizar movimiento de la ficha en " ?origen " a " ?destino crlf)
+        (do-for-all-facts ((?m movimiento))
+            (retract ?m)
+        )
+    else
+
+        (do-for-fact ((?m movimiento)) TRUE
+            (bind ?origen ?m:origen)
+            (bind ?destino ?m:destino)
+            (printout t "realizar movimiento de la ficha en " ?origen " a " ?destino crlf)
+            (retract ?m)
+        )
     )
     (retract ?e)
-
-
-    (if (eq ?destino 25) then
-        (bind ?destino_dif 0)
-    )
-
-    (if (eq ?destino 6) then
-        (bind ?destino_dif 25)
-    )
-
-    (bind ?destino_dif ?destino)
-
-    (bind ?diferencia (abs (- ?destino_dif ?origen)))
-
-    (do-for-fact ((?dado dado)) ( = ?dado:d1 ?diferencia); eliminar dado usado
+    (do-for-fact ((?dado dado)) (eq ?dado:d1 ?d) ; eliminar dado usado
         (retract ?dado)
     )
 
+<<<<<<< HEAD
+=======
+    ; (bind ?destino_dif ?destino)
+
+
+    ; (if (eq ?destino 25) then
+    ;     (bind ?destino_dif 0)
+    ; )
+
+    ; (if (eq ?destino 26) then
+    ;     (bind ?destino_dif 25)
+    ; )
+
+
+    ; (bind ?diferencia (abs (- ?destino_dif ?origen)))
+
+    ; (do-for-fact ((?dado dado)) (eq ?dado:d1 ?diferencia); eliminar dado usado
+    ;     (retract ?dado)
+    ; )
+
+
+>>>>>>> elRinconDeJosu
     (if (= (nth$ ?destino ?fichas) (* -1 ?t)) then ; si hay una fichas del otro color
         (if (= ?t 1) then
             (bind $?comidas(replace$ ?comidas 2 2 (+ (nth$ 2 ?comidas) 1)))
@@ -530,6 +640,7 @@
 
 )
 
+<<<<<<< HEAD
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;CPU;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defrule comidas1CPU
@@ -702,6 +813,55 @@
     )
 
 
+=======
+(defrule eleccion_final
+     (declare (salience 10))
+    ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas) (turno ?t) (jugador ?jug))
+    (movimientofinal (origen ?) (destino ?) (dado ?d)); si solo hay uno ni preguntar
+    (test (= (str-compare ?jug humano) 0))
+    =>
+    (if (>=(length (find-all-facts ((?m movimientofinal)) TRUE)) 2) then
+        (printout t "Dime la casilla de origen:" )
+        (bind ?origen (read))
+
+        (while (not(any-factp ((?m movimientofinal)) (eq ?m:origen ?origen)))
+            (printout t ?origen " NO es ninguna de las opciones permitidas" crlf)  ;Bucle que comprueba si el origen es una opcion
+            (printout t "Dime la casilla de origen:")
+            (bind ?origen (read))
+        )
+        (printout t "Posibles destinos: ")
+        (do-for-all-facts ((?m movimientofinal)) (eq ?m:origen ?origen) ;Imprime todos los que tienen el origen dado
+            (printout t ?m:destino ", ")
+        )
+        (printout t crlf)
+        (printout t "Dime la casilla de destino: ")
+        (bind ?destino (read)) 
+
+        (while (not(any-factp ((?m movimientofinal)) (and (eq ?m:origen ?origen) (eq ?m:destino ?destino))))
+            (printout t ?destino " NO es ninguna de las opciones permitidas" crlf) ;Bucle que comprueba si el destino es una opcion
+            (printout t "Dime la casilla de destino:" )
+            (bind ?destino (read))
+        )
+        (printout t "realizar movimiento de la ficha en " ?origen " a " ?destino crlf)
+        (do-for-all-facts ((?m movimientofinal))
+            (retract ?m)
+        )
+    else
+
+        (do-for-fact ((?m movimientofinal)) TRUE
+            (bind ?origen ?m:origen)
+            (bind ?destino ?m:destino)
+            (printout t "realizar movimiento de la ficha en " ?origen " a " ?destino crlf)
+            (retract ?m)
+        )
+    )
+    (retract ?e)
+    (do-for-fact ((?dado dado)) (eq ?dado:d1 ?d) ; eliminar dado usado
+        (retract ?dado)
+    )
+
+    (bind $?fichas (replace$ ?fichas ?origen ?origen (- (nth$ ?origen ?fichas) ?t))) ; una ficha menos en el origen
+>>>>>>> elRinconDeJosu
     (bind $?fichas (replace$ ?fichas ?destino ?destino (+ (nth$ ?destino ?fichas) ?t))) ; una ficha mas en el destino
 
     (do-for-fact ((?jugador jugador)) (eq ?jugador:color ?t)
@@ -711,6 +871,32 @@
     (assert (estado (id ?id) (padre ?padre) (fichas ?fichas) (comidas ?comidas) (turno ?t) (jugador ?j)))
 
     (imprimir ?fichas ?comidas)
+<<<<<<< HEAD
     
 )
 
+=======
+
+)
+
+
+(defrule victoriaBlancas
+    (declare (salience 10))
+    ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas) (turno ?t) (jugador ?))
+    (test (eq (nth$ 25 $?fichas) 15))
+    =>
+    (retract ?e)
+    (printout t "VICTORIA DE LAS BLANCAS" crlf)
+)
+
+(defrule victoriaNegras
+    (declare (salience 10))
+    ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas) (turno ?t) (jugador ?))
+    (test ( eq (nth$ 26 $?fichas) -15))
+    =>
+    (retract ?e)
+    (printout t "VICTORIA DE LAS NEGRAS" crlf)
+)
+
+
+>>>>>>> elRinconDeJosu
