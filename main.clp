@@ -109,12 +109,75 @@
 
 ;Funciones salidas, destinos alteradas para cuando se pueden empezar a meter fichas en la meta, es decir, cuando hay 15 fichas en el ultimo cuadrante
 
-(deffunction destinosmeta(?salida ?fichas ?dado ?turno)
-    (bind ?destino (- ?salida (* ?dado ?turno)))
-    (if (or (<= ?destino 0) (>= ?destino 25)) then 
+(deffunction destinosmeta1(?salida ?fichas ?dado)
+
+    (bind ?destino (- ?salida ?dado))
+
+
+    (if (< ?destino 0) then 
         (return 0)
     )
+
+
+    (if (>  (nth$ ?destino ?fichas) -2) then ;Mira si tiene dos o más fichas contrarias la casilla destino
+        (printout t "Salida: " ?salida " Destino: " ?destino crlf)
+        (assert (movimiento  (origen ?salida) (destino ?destino)))
+    )
     
+)
+
+(deffunction destinosmeta2(?salida ?fichas ?dado)
+
+    (bind ?destino (+ ?salida ?dado))
+
+    (if (> ?destino 25) then 
+        (return 0)
+    )
+
+    (if (< (nth$ ?destino ?fichas) 2) then
+       (printout t "Salida: " ?salida " Destino: " ?destino crlf)
+        (assert (movimiento  (origen ?salida) (destino ?destino)))
+    )
+)
+
+
+(deffunction salidasmeta1(?fichas ?dado)
+    (loop-for-count (?i 1 6)
+        (if (>  (nth$ ?i ?fichas) 0) then
+            (destinosmeta1 ?i ?fichas ?dado)
+        )
+    )
+)
+
+(deffunction salidasmeta2(?fichas ?dado)
+    (loop-for-count (?i 19 24)
+        (if (< (nth$ ?i ?fichas) 0) then
+            (destinosmeta2 ?i ?fichas ?dado)
+        )
+    )
+)
+
+
+
+
+(deffunction movimiento_libre_final1(?fichas ?dado) ; para blancas funcion para cuando la ficha mas lejana esta a una distancia menor que el dado y nos encontramos en el final
+    (loop-for-count (?i 1 6)
+        (if (>  (nth$ ?i ?fichas) 0) then
+            (printout t "Salida: " ?i " Destino: Meta blanca (25)"  crlf)
+            (assert (movimiento  (origen ?i) (destino 25)))
+        )
+    )
+   
+)
+
+(deffunction movimiento_libre_final2(?fichas ?dado); para negras funcion para cuando la ficha mas lejana esta a una distancia menor que el dado y nos encontramos en el final
+    (loop-for-count (?i 19 24)
+        (if (< (nth$ ?i ?fichas) 0) then
+            (printout t "Salida: " ?i " Destino: Meta negra (26)"  crlf)
+            (assert (movimiento  (origen ?i) (destino 0)))        
+        )
+    )
+   
 )
 
 
@@ -145,9 +208,14 @@
     ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas) (turno ?t) (jugador ?))
 =>
 
+    (printout t "seguir jugando? (s/n)" crlf) ; para parar la ejecucion si se rinde el rival
+    (bind ?r (read))
+    (if (eq ?r n) then; a menos que pongas n se sigue jugando
+        (return 0)
+    )
+
     (retract ?e)
     (bind ?id1 (+ ?id 1))
-    ;(bind ?turno1 (- ?t (* 2 ?t)))
     (bind ?turno1 (* ?t -1))
     
     (do-for-fact ((?jugador jugador)) (eq ?jugador:color ?turno1)
@@ -205,10 +273,23 @@
     ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas 0 ?x) (turno 1) (jugador ?))
     ?d <- (dado (d1 ?d1))
     =>  
-    (if (anyfactp ((?e estado)) (> ?e:fichas 6)) then
+    ;mirar que las fichas no esten todas en el ultimo cuadrante de las blancas
+    (bind ?num 0); para saber si estan todas en el ultimo cuadrante
+    (bind ?pos_lejana); para saber si podemos meter aunque no sean exactos
+    (loop-for-count (?f 1 6)
+        (bind ?fi_casilla (nth$ ?f ?fichas)); numero de fichass en la casilla
+        (if (> ?fi_casilla 0) then ; solo si las fichas son blancas se suman
+            (bind ?num (+ ?num ?fi_casilla))
+            (bind ?pos_lejana ?f)
+        )
+    )
+    (if (< ?num 15) then
         (salidas ?fichas ?d1 1)
-    else 
-        (salidasmeta ?fichas ?d1 1);A implementar
+    else (if (< ?pos_lejana  ?d1) then
+            (movimiento_libre_final1 ?fichas ?d1)
+        else
+            (salidasmeta1 ?fichas ?d1)
+         )
     )
 
 )
@@ -218,10 +299,22 @@
     ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas ?x 0) (turno -1) (jugador ?))
     ?d <- (dado (d1 ?d1))
     =>  
-    (if (anyfactp ((?e estado)) (< ?e:fichas 19)) then
+    (bind ?num 0); para saber si estan todas en el ultimo cuadrante
+    (bind ?pos_lejana); para saber si podemos meter aunque no sean exactos
+    (loop-for-count (?f 24 19); orden inverso para conseguir la mas lejana
+        (bind ?fi_casilla (nth$ ?f ?fichas)); numero de fichass en la casilla
+        (if (< ?fi_casilla 0) then ; solo si las fichas son blancas se suman
+            (bind ?num (+ ?num ?fi_casilla))
+            (bind ?pos_lejana ?f)
+        )
+    )
+    (if (< ?num 15) then
         (salidas ?fichas ?d1 -1)
-    else 
-        (salidasmeta ?fichas ?d1 -1);A implementar
+    else (if (< (+ ?pos_lejana ?d1) 25) then
+            (movimiento_libre_final2 ?fichas ?d1)
+        else
+            (salidasmeta2 ?fichas ?d1)
+         )
     )
 )
 
