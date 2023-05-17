@@ -205,7 +205,12 @@
     ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas 0 ?x) (turno 1) (jugador ?))
     ?d <- (dado (d1 ?d1))
     =>  
-    (salidas ?fichas ?d1 1)
+    (if (anyfactp ((?e estado)) (> ?e:fichas 6)) then
+        (salidas ?fichas ?d1 1)
+    else 
+        (salidasmeta ?fichas ?d1 1);A implementar
+    )
+
 )
 ; modificado para el caso de meta y no meta
 (defrule nocomidas2 
@@ -213,13 +218,11 @@
     ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas ?x 0) (turno -1) (jugador ?))
     ?d <- (dado (d1 ?d1))
     =>  
-    (bind ?final true)
-    (foreach ?f (?fichas)
-        (if (< ?f 19)) then
-            (bind ?final true)
-        )
+    (if (anyfactp ((?e estado)) (< ?e:fichas 19)) then
+        (salidas ?fichas ?d1 -1)
+    else 
+        (salidasmeta ?fichas ?d1 -1);A implementar
     )
-    (salidas ?fichas ?d1 -1)
 )
 
 
