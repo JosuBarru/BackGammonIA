@@ -217,7 +217,7 @@
     (if (eq ?num 15) then
         (return TRUE ?pos_lejana)
     )
-    (return FALSE ?pos_lejana)
+    (return (create$ FALSE ?pos_lejana))
     
 )
 
@@ -239,7 +239,7 @@
     (if (eq ?num -15) then
         (return TRUE ?pos_lejana)
     )
-    (return FALSE ?pos_lejana)
+    (return (create$ FALSE ?pos_lejana))
 )
 
 
