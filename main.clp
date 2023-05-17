@@ -549,35 +549,35 @@
     (movimientofinal (origen ?) (destino ?) (dado ?d)); si solo hay uno ni preguntar
     (test (= (str-compare ?jug humano) 0))
     =>
-    (if (>=(length (find-all-facts ((?m movimiento)) TRUE)) 2) then
+    (if (>=(length (find-all-facts ((?m movimientofinal)) TRUE)) 2) then
         (printout t "Dime la casilla de origen:" )
         (bind ?origen (read))
 
-        (while (not(any-factp ((?m movimiento)) (eq ?m:origen ?origen)))
+        (while (not(any-factp ((?m movimientofinal)) (eq ?m:origen ?origen)))
             (printout t ?origen " NO es ninguna de las opciones permitidas" crlf)  ;Bucle que comprueba si el origen es una opcion
             (printout t "Dime la casilla de origen:")
             (bind ?origen (read))
         )
         (printout t "Posibles destinos: ")
-        (do-for-all-facts ((?m movimiento)) (eq ?m:origen ?origen) ;Imprime todos los que tienen el origen dado
+        (do-for-all-facts ((?m movimientofinal)) (eq ?m:origen ?origen) ;Imprime todos los que tienen el origen dado
             (printout t ?m:destino ", ")
         )
         (printout t crlf)
         (printout t "Dime la casilla de destino: ")
         (bind ?destino (read)) 
 
-        (while (not(any-factp ((?m movimiento)) (and (eq ?m:origen ?origen) (eq ?m:destino ?destino))))
+        (while (not(any-factp ((?m movimientofinal)) (and (eq ?m:origen ?origen) (eq ?m:destino ?destino))))
             (printout t ?destino " NO es ninguna de las opciones permitidas" crlf) ;Bucle que comprueba si el destino es una opcion
             (printout t "Dime la casilla de destino:" )
             (bind ?destino (read))
         )
         (printout t "realizar movimiento de la ficha en " ?origen " a " ?destino crlf)
-        (do-for-all-facts ((?m movimiento))
+        (do-for-all-facts ((?m movimientofinal))
             (retract ?m)
         )
     else
 
-        (do-for-fact ((?m movimiento)) TRUE
+        (do-for-fact ((?m movimientofinal)) TRUE
             (bind ?origen ?m:origen)
             (bind ?destino ?m:destino)
             (printout t "realizar movimiento de la ficha en " ?origen " a " ?destino crlf)
