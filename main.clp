@@ -43,15 +43,15 @@
     )
 )
 
-(deffunction tirarDados ()
-    (seed (round (time))) 
+; (deffunction tirarDados ()
+;     (seed (round (time))) 
 
-    (bind ?d1 (random 1 6))
-    (bind ?d2 (random 1 6))
+;     (bind ?d1 (random 1 6))
+;     (bind ?d2 (random 1 6))
     
-    (printout t "Dados: " ?d1 " , " ?d2 crlf)
-    (return (create$ ?d1 ?d2))
-)
+;     (printout t "Dados: " ?d1 " , " ?d2 crlf)
+;     (return (create$ ?d1 ?d2))
+; )
 
 ;Imprimir en ascii art el tablero
 (deffunction blancaonegra(?a)
@@ -87,7 +87,7 @@
 
 (deffunction destinos(?salida ?fichas ?dado ?turno)
     (bind ?destino (- ?salida (* ?dado ?turno)))
-    (if (or (<= ?destino 0) (>= ?destino 25)) then
+    (if (or (<= ?destino 0) (>= ?destino 25)) then 
         (return 0)
     )
 
@@ -105,6 +105,16 @@
             (destinos ?i ?fichas ?dado ?turno)
         )
     )
+)
+
+;Funciones salidas, destinos alteradas para cuando se pueden empezar a meter fichas en la meta, es decir, cuando hay 15 fichas en el ultimo cuadrante
+
+(deffunction destinosmeta(?salida ?fichas ?dado ?turno)
+    (bind ?destino (- ?salida (* ?dado ?turno)))
+    (if (or (<= ?destino 0) (>= ?destino 25)) then 
+        (return 0)
+    )
+    
 )
 
 
@@ -128,6 +138,23 @@
   (assert (estado (id -1) (padre -2) (fichas (create$ -2 0 0 0 0 5 0 3 0 0 0 -5 5 0 0 0 -3 0 -5 0 0 0 0 2 0 0)) (comidas (create$ 0 0)) (turno -1) (jugador ?tipo1)))
   )
 
+(defrule victoriaBlancas
+    (declare (salience 10))
+    ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas) (turno ?t) (jugador ?))
+    (test (=(nth$ 25 $?fichas) 15))
+    =>
+    (retract ?e)
+    (printout t "VICTORIA DE LAS BLANCAS" crlf)
+)
+
+(defrule victoriaNegras
+    (declare (salience 10))
+    ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas) (turno ?t) (jugador ?))
+    (test (=(nth$ 26 $?fichas) -15))
+    =>
+    (retract ?e)
+    (printout t "VICTORIA DE LAS NEGRAS" crlf)
+)
 
 
 (defrule dados
@@ -147,9 +174,12 @@
     (assert (estado (id ?id1) (padre ?id) (fichas ?fichas) (comidas ?comidas) (turno ?turno1) (jugador ?j)))
 
     (imprimir ?fichas ?comidas)
-    (bind $?d (tirarDados))
-    (assert (dado (d1(nth$ 1 ?d)) (id 1)))
-    (assert (dado (d1(nth$ 2 ?d)) (id 2)))
+    (printout t "resultado del primer dado:" crlf)
+    (bind ?d1 (read))
+    (printout t "resultado del primer dado:" crlf)
+    (bind ?d2 (read))
+    (assert (dado (d1 ?d1) (id 1)))
+    (assert (dado (d1 ?d2) (id 2)))
 )
 
 (defrule dobles 
@@ -186,7 +216,7 @@
     (destinos 0 ?fichas ?d1 -1)
 )
 
-;Casos en que no hay comidas
+;Casos en que no hay comidas ; modificado para el caso de meta y no meta
 (defrule nocomidas1
     (declare (salience 100))  
     ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas 0 ?x) (turno 1) (jugador ?))
@@ -194,12 +224,18 @@
     =>  
     (salidas ?fichas ?d1 1)
 )
-
-(defrule nocomidas2
+; modificado para el caso de meta y no meta
+(defrule nocomidas2 
     (declare (salience 100))  
     ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas ?x 0) (turno -1) (jugador ?))
     ?d <- (dado (d1 ?d1))
     =>  
+    (bind ?final true)
+    (foreach ?f (?fichas)
+        (if (< ?f 19)) then
+            (bind ?final true)
+        )
+    )
     (salidas ?fichas ?d1 -1)
 )
 
@@ -264,10 +300,7 @@
             (bind $?fichas (replace$ ?fichas ?origen ?origen (- (nth$ ?origen ?fichas) ?t))) ; una ficha menos en el origen
         )
     )
-        
 
-
-    
 
     (bind $?fichas (replace$ ?fichas ?destino ?destino (+ (nth$ ?destino ?fichas) ?t))) ; una ficha mas en el destino
 
