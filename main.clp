@@ -87,7 +87,7 @@
 
 (deffunction destinos(?salida ?fichas ?dado ?turno)
     (bind ?destino (- ?salida (* ?dado ?turno)))
-    (if (or (<= ?destino 0) (>= ?destino 25)) then
+    (if (or (<= ?destino 0) (>= ?destino 25)) then 
         (return 0)
     )
 
@@ -105,6 +105,16 @@
             (destinos ?i ?fichas ?dado ?turno)
         )
     )
+)
+
+;Funciones salidas, destinos alteradas para cuando se pueden empezar a meter fichas en la meta, es decir, cuando hay 15 fichas en el ultimo cuadrante
+
+(deffunction destinosmeta(?salida ?fichas ?dado ?turno)
+    (bind ?destino (- ?salida (* ?dado ?turno)))
+    (if (or (<= ?destino 0) (>= ?destino 25)) then 
+        (return 0)
+    )
+    
 )
 
 
@@ -147,11 +157,11 @@
     (assert (estado (id ?id1) (padre ?id) (fichas ?fichas) (comidas ?comidas) (turno ?turno1) (jugador ?j)))
 
     (imprimir ?fichas ?comidas)
+    (printout t "resultado del primer dado:" crlf)
     (bind ?d1 (read))
+    (printout t "resultado del primer dado:" crlf)
     (bind ?d2 (read))
-    (printout t "resultado del primer dado:" crlf)
     (assert (dado (d1 ?d1) (id 1)))
-    (printout t "resultado del primer dado:" crlf)
     (assert (dado (d1 ?d2) (id 2)))
 )
 
@@ -189,7 +199,7 @@
     (destinos 0 ?fichas ?d1 -1)
 )
 
-;Casos en que no hay comidas
+;Casos en que no hay comidas ; modificado para el caso de meta y no meta
 (defrule nocomidas1
     (declare (salience 100))  
     ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas 0 ?x) (turno 1) (jugador ?))
@@ -197,12 +207,18 @@
     =>  
     (salidas ?fichas ?d1 1)
 )
-
-(defrule nocomidas2
+; modificado para el caso de meta y no meta
+(defrule nocomidas2 
     (declare (salience 100))  
     ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas ?x 0) (turno -1) (jugador ?))
     ?d <- (dado (d1 ?d1))
     =>  
+    (bind ?final true)
+    (foreach ?f (?fichas)
+        (if (< ?f 19)) then
+            (bind ?final true)
+        )
+    )
     (salidas ?fichas ?d1 -1)
 )
 
@@ -267,10 +283,7 @@
             (bind $?fichas (replace$ ?fichas ?origen ?origen (- (nth$ ?origen ?fichas) ?t))) ; una ficha menos en el origen
         )
     )
-        
 
-
-    
 
     (bind $?fichas (replace$ ?fichas ?destino ?destino (+ (nth$ ?destino ?fichas) ?t))) ; una ficha mas en el destino
 
@@ -283,3 +296,4 @@
     (imprimir ?fichas ?comidas)
 
 )
+
