@@ -242,6 +242,33 @@
 )
 
 
+(deffunction ult_cuadefi1 (?fichas ?comidas ); devolver TRUe si y solo si solo hay  piezas blancas en el ultimo cuadrante 
+
+    (do-for-count(?i 7 24)
+        (if (> (nth$ ?i ?fichas) 0) then
+            (return FALSE)
+        )
+    )
+    (if (> (nth$ 1 ?comidas) 0) then
+        (return FALSE)
+    )
+    (return TRUE)
+
+)
+
+(deffunction ult-cuadefi2 (?fichas ?comidas)
+    (do-for-count(?i 1 18)
+        (if (< (nth$ ?i ?fichas) 0) then
+            (return FALSE)
+        )
+    )
+    (if (< (nth$ 2 ?comidas) 0) then
+        (return FALSE)
+    )
+    (return TRUE)
+)
+
+
 ;Agente Inteligente
 
 (deffunction evaluarBlancas (?fichas ?comidas)
@@ -267,14 +294,14 @@
             (bind ?puntuacion (- ?puntuacion 50)) ;Restamos por dejar una sola ficha en una casilla
         )
     )
-    (bind $?res1 (ultimo_cuadrante1 ?fichas))
-    (bind $?res2 (ultimo_cuadrante2 ?fichas))
+    (bind ?res1 (ult_cuadefi1 ?fichas ?comidas))
+    (bind ?res2 (ult_cuadefi2 ?fichas ?comidas))
 
-    (if (eq (nth$ 1 ?res1) TRUE) then
+    (if (eq ?res1 TRUE) then
         (bind ?puntuacion (+ ?puntuacion 50))            ; Sumamos 50 si ya podemos meter las blancas en la meta
     )
 
-    (if (eq (nth$ 1 ?res2) TRUE) then
+    (if (eq ?res2 TRUE) then
         (bind ?puntuacion (+ ?puntuacion 50))            ; Restamos 50 si ya pueden meter las negras en la meta
     )
 
@@ -305,14 +332,14 @@
         )
     )
 
-    (bind $?res1 (ultimo_cuadrante1 ?fichas))
-    (bind $?res2 (ultimo_cuadrante2 ?fichas))
+    (bind ?res1 (ult_cuadefi1 ?fichas ?comidas))
+    (bind ?res2 (ult_cuadefi2 ?fichas ?comidas))
 
-    (if (eq (nth$ 1 ?res1) TRUE) then
+    (if (eq ?res1 TRUE) then
         (bind ?puntuacion (+ ?puntuacion 50))            ; Sumamos 50 si ya podemos meter las negras en la meta
     )
 
-    (if (eq (nth$ 1 ?res2) TRUE) then
+    (if (eq ?res2 TRUE) then
         (bind ?puntuacion (+ ?puntuacion 50))            ; Restamos 50 si ya pueden meter las blancas en la meta
     )
 
