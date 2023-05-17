@@ -14,7 +14,7 @@
 
 (deftemplate movimiento
     (slot origen (type INTEGER)(range 0 25)) ;De 1 a 24 son las casillas del tablero, 25 es la casilla de blancas comidas y 0 la de negras comidas 
-    (slot destino (type INTEGER)(range 0 25))) ;De 1 a 24 son las casillas del tablero, 0 es la casilla de la meta de blancas y 25 la de negras 
+    (slot destino (type INTEGER)(range 1 26))) ;De 1 a 24 son las casillas del tablero, 25 es la casilla de la meta de blancas y 26 la de negras 
 
 (deftemplate dado
     (slot d1 (type INTEGER)(range 1 6))
@@ -88,6 +88,7 @@
 (deffunction destinos(?salida ?fichas ?dado ?turno)
     (bind ?destino (- ?salida (* ?dado ?turno)))
     (if (or (<= ?destino 0) (>= ?destino 25)) then 
+
         (return 0)
     )
 
@@ -95,6 +96,7 @@
     (if (>  (* ?turno (nth$ ?destino  ?fichas)) -2) then ;Mira si tiene dos o más fichas contrarias la casilla destino
         (printout t "Salida: " ?salida " Destino: " ?destino crlf)
         (assert (movimiento  (origen ?salida) (destino ?destino)))
+        (return 0)
     )
 
 )
@@ -118,6 +120,11 @@
         (return 0)
     )
 
+    (if (eq ?destino 0) then
+        (printout t "Salida: " ?salida " Destino: Meta blanca (25)"  crlf)
+        (assert (movimiento  (origen ?salida) (destino 25)))
+        (return 0)
+    )
 
     (if (>  (nth$ ?destino ?fichas) -2) then ;Mira si tiene dos o más fichas contrarias la casilla destino
         (printout t "Salida: " ?salida " Destino: " ?destino crlf)
@@ -131,6 +138,12 @@
     (bind ?destino (+ ?salida ?dado))
 
     (if (> ?destino 25) then 
+        (return 0)
+    )
+
+    (if (eq ?destino 25) then
+        (printout t "Salida: " ?salida " Destino: Meta negra (26)"  crlf)
+        (assert (movimiento  (origen ?salida) (destino 26)))
         (return 0)
     )
 
@@ -174,7 +187,7 @@
     (loop-for-count (?i 19 24)
         (if (< (nth$ ?i ?fichas) 0) then
             (printout t "Salida: " ?i " Destino: Meta negra (26)"  crlf)
-            (assert (movimiento  (origen ?i) (destino 0)))        
+            (assert (movimiento  (origen ?i) (destino 26)))        
         )
     )
    
@@ -283,7 +296,11 @@
             (bind ?pos_lejana ?f)
         )
     )
+    (bind ?num (+ ?num (nth$ 25 ?fichas))); sumamos las fichas que estan en la meta
+    (printout t "para debug: numero de fichas en el ultimo cuadrante: " ?num crlf)
+    (printout t "para debug: posicion mas lejana: " ?pos_lejana crlf)
     (if (< ?num 15) then
+        (printout t "no es final" crlf)
         (salidas ?fichas ?d1 1)
     else (if (< ?pos_lejana  ?d1) then
             (movimiento_libre_final1 ?fichas ?d1)
@@ -301,22 +318,37 @@
     =>  
     (bind ?num 0); para saber si estan todas en el ultimo cuadrante
     (bind ?pos_lejana); para saber si podemos meter aunque no sean exactos
-    (loop-for-count (?f 24 19); orden inverso para conseguir la mas lejana
+    (foreach ?f (create$ 24 23 22 21 20 19); orden inverso para conseguir la mas lejana
         (bind ?fi_casilla (nth$ ?f ?fichas)); numero de fichass en la casilla
         (if (< ?fi_casilla 0) then ; solo si las fichas son blancas se suman
             (bind ?num (+ ?num ?fi_casilla))
             (bind ?pos_lejana ?f)
         )
     )
-    (if (< ?num 15) then
+
+    (bind ?num (+ ?num (nth$ 26 ?fichas))); sumamos las fichas que estan en la meta
+     (printout t "para debug: numero de fichas en el ultimo cuadrante: " ?num crlf)
+    (printout t "para debug: posicion mas lejana: " ?pos_lejana crlf)
+    (if (> ?num -15) then
+        (printout t "no es final" crlf)
         (salidas ?fichas ?d1 -1)
     else (if (< (+ ?pos_lejana ?d1) 25) then
             (movimiento_libre_final2 ?fichas ?d1)
+            (retract ?d)
         else
             (salidasmeta2 ?fichas ?d1)
          )
     )
 )
+
+(defrule borrarDados ; regla para borrar los dados sino existen movimientos
+    (declare (salience 10))
+    ?d1<-(dado (d1 ?) (id ?))
+    =>
+    (retract ?d1)
+    (printout t "NO HAY MOVIMIENTOS POSIBLES" crlf)
+)
+
 
 
 (defrule eleccion 
@@ -352,11 +384,23 @@
     )
     (retract ?e)
 
-    (bind ?diferencia (abs (- ?destino ?origen)))
+
+    (if (eq ?destino 25) then
+        (bind ?destino_dif 0)
+    )
+
+    (if (eq ?destino 6) then
+        (bind ?destino_dif 25)
+    )
+
+    (bind ?destino_dif ?destino)
+
+    (bind ?diferencia (abs (- ?destino_dif ?origen)))
 
     (do-for-fact ((?dado dado)) ( = ?dado:d1 ?diferencia); eliminar dado usado
         (retract ?dado)
     )
+
 
     (if (= (nth$ ?destino ?fichas) (* -1 ?t)) then ; si hay una fichas del otro color
         (if (= ?t 1) then
