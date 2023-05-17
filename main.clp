@@ -198,7 +198,7 @@
     
     (bind ?v 0)
     (do-for-all-facts ((?m movimiento)) (eq ?m:idEstado ?id)
-    (bind)
+    (bind ?v (+ ?v expectimax ?))
     )
 
 )
@@ -528,6 +528,102 @@
 
     (imprimir ?fichas ?comidas)
 
+)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;CPU;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defrule comidas1CPU
+    (declare (salience 100))  
+
+    ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas ~0 ?x) (turno 1) (jugador ?))
+    ?d <- (dado (d1 ?d1) (id ?id1))
+    (test (= (str-compare ?jug cpu) 0))
+    =>
+
+    (destinos 25 ?fichas ?d1 1)
+)
+
+(defrule comidas2CPU
+    (declare (salience 100))  
+
+    ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas ?x ~0) (turno -1) (jugador ?))
+    ?d <- (dado (d1 ?d1) (id ?id1))
+    (test (= (str-compare ?jug cpu) 0))
+    =>
+
+    (destinos 0 ?fichas ?d1 -1)
+)
+
+;Casos en que no hay comidas ; modificado para el caso de meta y no meta
+(defrule nocomidas1CPU
+    (declare (salience 100))  
+    ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas 0 ?x) (turno 1) (jugador ?))
+    ?d <- (dado (d1 ?d1))
+    (test (= (str-compare ?jug cpu) 0))
+    =>  
+    ;mirar que las fichas no esten todas en el ultimo cuadrante de las blancas
+    (bind ?num 0); para saber si estan todas en el ultimo cuadrante
+    (bind ?pos_lejana); para saber si podemos meter aunque no sean exactos
+    (loop-for-count (?f 1 6)
+        (bind ?fi_casilla (nth$ ?f ?fichas)); numero de fichass en la casilla
+        (if (> ?fi_casilla 0) then ; solo si las fichas son blancas se suman
+            (bind ?num (+ ?num ?fi_casilla))
+            (bind ?pos_lejana ?f)
+        )
+    )
+    (bind ?num (+ ?num (nth$ 25 ?fichas))); sumamos las fichas que estan en la meta
+    (printout t "para debug: numero de fichas en el ultimo cuadrante: " ?num crlf)
+    (printout t "para debug: posicion mas lejana: " ?pos_lejana crlf)
+    (if (< ?num 15) then
+        (printout t "no es final" crlf)
+        (salidas ?fichas ?d1 1)
+    else (if (< ?pos_lejana  ?d1) then
+            (movimiento_libre_final1 ?fichas ?d1)
+        else
+            (salidasmeta1 ?fichas ?d1)
+         )
+    )
+
+)
+; modificado para el caso de meta y no meta
+(defrule nocomidas2CPU
+    (declare (salience 100))  
+    ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas ?x 0) (turno -1) (jugador ?))
+    ?d <- (dado (d1 ?d1))
+    (test (= (str-compare ?jug cpu) 0))
+    =>  
+    (bind ?num 0); para saber si estan todas en el ultimo cuadrante
+    (bind ?pos_lejana); para saber si podemos meter aunque no sean exactos
+    (foreach ?f (create$ 24 23 22 21 20 19); orden inverso para conseguir la mas lejana
+        (bind ?fi_casilla (nth$ ?f ?fichas)); numero de fichass en la casilla
+        (if (< ?fi_casilla 0) then ; solo si las fichas son blancas se suman
+            (bind ?num (+ ?num ?fi_casilla))
+            (bind ?pos_lejana ?f)
+        )
+    )
+
+    (bind ?num (+ ?num (nth$ 26 ?fichas))); sumamos las fichas que estan en la meta
+     (printout t "para debug: numero de fichas en el ultimo cuadrante: " ?num crlf)
+    (printout t "para debug: posicion mas lejana: " ?pos_lejana crlf)
+    (if (> ?num -15) then
+        (printout t "no es final" crlf)
+        (salidas ?fichas ?d1 -1)
+    else (if (< (+ ?pos_lejana ?d1) 25) then
+            (movimiento_libre_final2 ?fichas ?d1)
+            (retract ?d)
+        else
+            (salidasmeta2 ?fichas ?d1)
+         )
+    )
+)
+
+(defrule borrarDadosCPU ; regla para borrar los dados sino existen movimientos
+    (declare (salience 10))
+    ?d1<-(dado (d1 ?) (id ?))
+    (test (= (str-compare ?jug cpu) 0))
+    =>
+    (retract ?d1)
+    (printout t "NO HAY MOVIMIENTOS POSIBLES" crlf)
 )
 
 (defrule eleccionCPU
