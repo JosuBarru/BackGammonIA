@@ -215,7 +215,7 @@
     (printout t "para debug: posicion mas lejana: " ?pos_lejana crlf)
 
     (if (eq ?num 15) then
-        (return TRUE ?pos_lejana)
+        (return (create$ TRUE ?pos_lejana))
     )
     (return (create$ FALSE ?pos_lejana))
     
@@ -237,7 +237,7 @@
     (printout t "para debug: posicion mas lejana: " ?pos_lejana crlf)
 
     (if (eq ?num -15) then
-        (return TRUE ?pos_lejana)
+        (return (create$ TRUE ?pos_lejana))
     )
     (return (create$ FALSE ?pos_lejana))
 )
@@ -420,9 +420,9 @@
     ?d <- (dado (d1 ?d1))
     =>  
     
-    (bind $?res (ultimo_cuadrante2 ?fichas)
+    (bind $?res (ultimo_cuadrante2 ?fichas))
 
-    (if (> ?num -15) then
+    (if (eq (nth$ 1 ?res) FALSE) then
         (printout t "no es final" crlf)
         (salidas ?fichas ?d1 -1)
     else (if (< (+ (nth$ 2 ?res) ?d1) 25) then
