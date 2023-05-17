@@ -267,14 +267,16 @@
             (bind ?puntuacion (- ?puntuacion 50)) ;Restamos por dejar una sola ficha en una casilla
         )
     )
+    (bind $?res1 (ultimo_cuadrante1 ?fichas))
+    (bind $?res2 (ultimo_cuadrante2 ?fichas))
 
-    ; (if (any-factp ((?e estado)) (> ?e:fichas 6)) then
-    ;     (bind ?puntuacion (+ ?puntuacion 50))            ; Sumamos 50 si ya podemos meter las blancas en la meta
-    ; )
+    (if (eq (nth$ 1 ?res1) TRUE) then
+        (bind ?puntuacion (+ ?puntuacion 50))            ; Sumamos 50 si ya podemos meter las blancas en la meta
+    )
 
-    ; (if (any-factp ((?e estado)) (< ?e:fichas 19)) then
-    ;     (bind ?puntuacion (- ?puntuacion 50))            ; Restamos 50 si ya podemos meter las negras en la meta
-    ; )
+    (if (eq (nth$ 1 ?res2) TRUE) then
+        (bind ?puntuacion (+ ?puntuacion 50))            ; Restamos 50 si ya pueden meter las negras en la meta
+    )
 
     (return ?puntuacion)
 )
@@ -303,13 +305,16 @@
         )
     )
 
-    ; (if (any-factp ((?e estado)) (< ?e:fichas 19)) then
-    ;     (bind ?puntuacion (+ ?puntuacion 50))            ; Sumamos 50 si ya podemos meter las negras en la meta
-    ; )
+    (bind $?res1 (ultimo_cuadrante1 ?fichas))
+    (bind $?res2 (ultimo_cuadrante2 ?fichas))
 
-    ; (if (any-factp ((?e estado)) (> ?e:fichas 6)) then
-    ;     (bind ?puntuacion (- ?puntuacion 50))            ; Restamos 50 si ya podemos meter las blancas en la meta
-    ; )
+    (if (eq (nth$ 1 ?res1) TRUE) then
+        (bind ?puntuacion (+ ?puntuacion 50))            ; Sumamos 50 si ya podemos meter las negras en la meta
+    )
+
+    (if (eq (nth$ 1 ?res2) TRUE) then
+        (bind ?puntuacion (+ ?puntuacion 50))            ; Restamos 50 si ya pueden meter las blancas en la meta
+    )
 
     (return ?puntuacion)
 )
@@ -356,9 +361,9 @@
     
   (assert (jugador (id 2) (tipo ?tipo2) (color ?color2)))
     
-;   (assert (estado (id -1) (padre -2) (fichas (create$ -2 0 0 0 0 5 0 3 0 0 0 -5 5 0 0 0 -3 0 -5 0 0 0 0 2 0 0)) (comidas (create$ 0 0)) (turno -1) (jugador ?tipo1)))
+   (assert (estado (id -1) (padre -2) (fichas (create$ -2 0 0 0 0 5 0 3 0 0 0 -5 5 0 0 0 -3 0 -5 0 0 0 0 2 0 0)) (comidas (create$ 0 0)) (turno -1) (jugador ?tipo1)))
 
-    (assert (estado (id -1) (padre -2) (fichas (create$ 5 0 5 0 5 0 0 0 0 0 0 0 0 0 0 0 0 -5 0  -5 0 0 -5 0 0 0)) (comidas (create$ 0 0)) (turno -1) (jugador ?tipo1)))
+;    (assert (estado (id -1) (padre -2) (fichas (create$ 5 0 5 0 5 0 0 0 0 0 0 0 0 0 0 0 0 -5 0  -5 0 0 -5 0 0 0)) (comidas (create$ 0 0)) (turno -1) (jugador ?tipo1)))
 
   )
 
