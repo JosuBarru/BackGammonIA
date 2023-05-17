@@ -108,7 +108,7 @@
     )
 )
 
-(deffunction evaluarBlancas (?fichas ?comidas ?dados)
+(deffunction evaluarBlancas (?fichas ?comidas)
     (if (= (nth$ 25 ?fichas) 15) then
         (return 1000)
     )
@@ -127,15 +127,18 @@
                 (bind ?puntuacion (+ ?puntuacion (* (nth$ ?i ?fichas) (- 25 ?i)))) ;Sumamos la distancia total de las negras a la meta
             )
         )
+        (if (= (nth$ ?i ?fichas) 1) then
+            (bind ?puntuacion (- ?puntuacion 50))
+        )
     )
 
-    (if (any-factp ((?e estado)) (> ?e:fichas 6)) then
-        (bind ?puntuacion (+ ?puntuacion 50))            ; Sumamos 50 si ya podemos meter las blancas en la meta
-    )
+    ; (if (any-factp ((?e estado)) (> ?e:fichas 6)) then
+    ;     (bind ?puntuacion (+ ?puntuacion 50))            ; Sumamos 50 si ya podemos meter las blancas en la meta
+    ; )
 
-    (if (any-factp ((?e estado)) (< ?e:fichas 19)) then
-        (bind ?puntuacion (- ?puntuacion 50))            ; Restamos 50 si ya podemos meter las negras en la meta
-    )
+    ; (if (any-factp ((?e estado)) (< ?e:fichas 19)) then
+    ;     (bind ?puntuacion (- ?puntuacion 50))            ; Restamos 50 si ya podemos meter las negras en la meta
+    ; )
 
     (return ?puntuacion)
 )
@@ -159,15 +162,18 @@
                 (bind ?puntuacion (+ ?puntuacion (* (nth$ ?i ?fichas) ?i))) ;Sumamos la distancia total de las blancas a la meta
             )
         )
+        (if (= (nth$ ?i ?fichas) -1) then
+            (bind ?puntuacion (- ?puntuacion 50))
+        )
     )
 
-    (if (any-factp ((?e estado)) (< ?e:fichas 19)) then
-        (bind ?puntuacion (+ ?puntuacion 50))            ; Sumamos 50 si ya podemos meter las negras en la meta
-    )
+    ; (if (any-factp ((?e estado)) (< ?e:fichas 19)) then
+    ;     (bind ?puntuacion (+ ?puntuacion 50))            ; Sumamos 50 si ya podemos meter las negras en la meta
+    ; )
 
-    (if (any-factp ((?e estado)) (> ?e:fichas 6)) then
-        (bind ?puntuacion (- ?puntuacion 50))            ; Restamos 50 si ya podemos meter las blancas en la meta
-    )
+    ; (if (any-factp ((?e estado)) (> ?e:fichas 6)) then
+    ;     (bind ?puntuacion (- ?puntuacion 50))            ; Restamos 50 si ya podemos meter las blancas en la meta
+    ; )
 
     (return ?puntuacion)
 )
@@ -497,5 +503,93 @@
 
     (imprimir ?fichas ?comidas)
 
+)
+
+(defrule eleccionCPU
+    (declare (salience 10))
+    ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas) (turno ?t) (jugador ?jug))
+    (movimiento (origen ?) (destino ?)); si solo hay uno ni preguntar
+    (test (= (str-compare ?jug cpu) 0))
+    =>
+    (bind ?max -99999)
+    (bind ?origen 0)
+    (bind ?destino 0)
+    (if (= ?t 1) then
+        (do-for-all-facts ((?m movimiento)) TRUE
+            (bind ?evaluacion (evaluarBlancas $?fichas $?comidas))
+            (if (> ?evaluacion ?max) then 
+                (bind ?max ?evaluacion)
+                (bind ?origen ?m:origen)
+                (bind ?destino ?m:destino)
+            )
+        )
+
+    else
+        (do-for-all-facts ((?m movimiento)) TRUE
+            (bind ?evaluacion (evaluarNegras $?fichas $?comidas))
+            (if (> ?evaluacion ?max) then 
+                (bind ?max ?evaluacion)
+                (bind ?origen ?m:origen)
+                (bind ?destino ?m:destino)
+            )
+        )
+    )
+
+    (printout t "realizar movimiento de la ficha en " ?origen " a " ?destino crlf)
+    (do-for-all-facts ((?m movimiento))
+       (retract ?m)
+    )
+    (retract ?e)
+
+
+    (if (eq ?destino 25) then
+        (bind ?destino_dif 0)
+    )
+
+    (if (eq ?destino 6) then
+        (bind ?destino_dif 25)
+    )
+
+    (bind ?destino_dif ?destino)
+
+    (bind ?diferencia (abs (- ?destino_dif ?origen)))
+
+    (do-for-fact ((?dado dado)) ( = ?dado:d1 ?diferencia); eliminar dado usado
+        (retract ?dado)
+    )
+
+    (if (= (nth$ ?destino ?fichas) (* -1 ?t)) then ; si hay una fichas del otro color
+        (if (= ?t 1) then
+            (bind $?comidas(replace$ ?comidas 2 2 (+ (nth$ 2 ?comidas) 1)))
+            (bind $?fichas (replace$ ?fichas ?destino ?destino 0))
+        )
+        (if (= ?t -1) then
+            (bind $?comidas (replace$ ?comidas 1 1 (+ (nth$ 1 ?comidas) 1)))
+            (bind $?fichas (replace$ ?fichas ?destino ?destino 0))
+        )
+    )
+    (if (= ?origen 25) then
+        (bind $?comidas (replace$ ?comidas 1 1 (- (nth$ 1 ?comidas) 1)))
+        (printout  t "comidas: "  crlf)
+        else
+        (if (= ?origen 0) then
+            (bind $?comidas (replace$ ?comidas 2 2 (- (nth$ 2 ?comidas) 1)))
+            (printout  t "comidas: "  crlf)
+            else
+            (bind $?fichas (replace$ ?fichas ?origen ?origen (- (nth$ ?origen ?fichas) ?t))) ; una ficha menos en el origen
+        )
+    )
+
+
+    (bind $?fichas (replace$ ?fichas ?destino ?destino (+ (nth$ ?destino ?fichas) ?t))) ; una ficha mas en el destino
+
+    (do-for-fact ((?jugador jugador)) (eq ?jugador:color ?t)
+    (bind ?j ?jugador:tipo)
+    )
+
+    (assert (estado (id ?id) (padre ?padre) (fichas ?fichas) (comidas ?comidas) (turno ?t) (jugador ?j)))
+
+    (imprimir ?fichas ?comidas)
+    
 )
 
