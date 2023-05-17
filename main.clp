@@ -128,7 +128,7 @@
             )
         )
         (if (= (nth$ ?i ?fichas) 1) then
-            (bind ?puntuacion (- ?puntuacion 50))
+            (bind ?puntuacion (- ?puntuacion 50)) ;Restamos por dejar una sola ficha en una casilla
         )
     )
 
@@ -163,7 +163,7 @@
             )
         )
         (if (= (nth$ ?i ?fichas) -1) then
-            (bind ?puntuacion (- ?puntuacion 50))
+            (bind ?puntuacion (- ?puntuacion 50)) ;Restamos por dejar una sola ficha en una casilla
         )
     )
 
@@ -176,6 +176,30 @@
     ; )
 
     (return ?puntuacion)
+)
+
+(deffunction expectimaxBlancas (?id ?next) ; Si next es 1 es max, si es 0, expValue
+    (do-for-fact ((?e estado)) (eq ?e:id ?id)
+        (if (or (= (nth$ 25 ?e:fichas) 15) (= ?e:profundidad 10)) then              ;Profundidad maxima es 10
+            (return (evaluarBlancas ?e:fichas ?e:comidas))
+        )
+    )
+)
+
+(deffunction expectimaxNegras (?id ?next) ; Si next es 1 es max, si es 0, expValue
+    (do-for-fact ((?e estado)) (eq ?e:id ?id)
+        (if (or (= (nth$ 26 ?e:fichas) -15) (= ?e:profundidad 10)) then              ;Profundidad maxima es 10
+            (return (evaluarNegras ?e:fichas ?e:comidas))
+        )
+    )
+)
+
+(deffunction expValue (?id)
+    
+    (bind ?v 0)
+    (do-for-all-facts ((?m movimiento)) (eq ?m:idEstado ?id)
+    )
+
 )
 
 ;Funciones salidas, destinos alteradas para cuando se pueden empezar a meter fichas en la meta, es decir, cuando hay 15 fichas en el ultimo cuadrante
@@ -511,7 +535,7 @@
     (movimiento (origen ?) (destino ?)); si solo hay uno ni preguntar
     (test (= (str-compare ?jug cpu) 0))
     =>
-    (bind ?max -99999)
+    (bind ?max -99999999)
     (bind ?origen 0)
     (bind ?destino 0)
     (if (= ?t 1) then
