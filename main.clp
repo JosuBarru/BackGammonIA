@@ -16,6 +16,9 @@
     (slot origen (type INTEGER)(range 0 25)) ;De 1 a 24 son las casillas del tablero, 25 es la casilla de blancas comidas y 0 la de negras comidas 
 <<<<<<< HEAD
     (slot destino (type INTEGER)(range 0 25))) ;De 1 a 24 son las casillas del tablero, 0 es la casilla de la meta de blancas y 25 la de negras 
+=======
+    (slot destino (type INTEGER)(range 1 26))) ;De 1 a 24 son las casillas del tablero, 25 es la casilla de la meta de blancas y 26 la de negras 
+>>>>>>> origin/elRinconDeJosu
 
 (deftemplate dado
     (slot d1 (type INTEGER)(range 1 6))
@@ -89,6 +92,10 @@
 (deffunction destinos(?salida ?fichas ?dado ?turno)
     (bind ?destino (- ?salida (* ?dado ?turno)))
     (if (or (<= ?destino 0) (>= ?destino 25)) then 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/elRinconDeJosu
         (return 0)
     )
 
@@ -96,6 +103,10 @@
     (if (>  (* ?turno (nth$ ?destino  ?fichas)) -2) then ;Mira si tiene dos o más fichas contrarias la casilla destino
         (printout t "Salida: " ?salida " Destino: " ?destino crlf)
         (assert (movimiento  (origen ?salida) (destino ?destino)))
+<<<<<<< HEAD
+=======
+        (return 0)
+>>>>>>> origin/elRinconDeJosu
     )
 
 )
@@ -110,6 +121,7 @@
 
 ;Funciones salidas, destinos alteradas para cuando se pueden empezar a meter fichas en la meta, es decir, cuando hay 15 fichas en el ultimo cuadrante
 
+<<<<<<< HEAD
 (deffunction destinosmeta(?salida ?fichas ?dado ?turno)
     (bind ?destino (- ?salida (* ?dado ?turno)))
     (if (or (<= ?destino 0) (>= ?destino 25)) then 
@@ -174,6 +186,88 @@
     )
 
     (return ?puntuacion)
+=======
+(deffunction destinosmeta1(?salida ?fichas ?dado)
+
+    (bind ?destino (- ?salida ?dado))
+
+
+    (if (< ?destino 0) then 
+        (return 0)
+    )
+
+    (if (eq ?destino 0) then
+        (printout t "Salida: " ?salida " Destino: Meta blanca (25)"  crlf)
+        (assert (movimiento  (origen ?salida) (destino 25)))
+        (return 0)
+    )
+
+    (if (>  (nth$ ?destino ?fichas) -2) then ;Mira si tiene dos o más fichas contrarias la casilla destino
+        (printout t "Salida: " ?salida " Destino: " ?destino crlf)
+        (assert (movimiento  (origen ?salida) (destino ?destino)))
+    )
+    
+)
+
+(deffunction destinosmeta2(?salida ?fichas ?dado)
+
+    (bind ?destino (+ ?salida ?dado))
+
+    (if (> ?destino 25) then 
+        (return 0)
+    )
+
+    (if (eq ?destino 25) then
+        (printout t "Salida: " ?salida " Destino: Meta negra (26)"  crlf)
+        (assert (movimiento  (origen ?salida) (destino 26)))
+        (return 0)
+    )
+
+    (if (< (nth$ ?destino ?fichas) 2) then
+       (printout t "Salida: " ?salida " Destino: " ?destino crlf)
+        (assert (movimiento  (origen ?salida) (destino ?destino)))
+    )
+)
+
+
+(deffunction salidasmeta1(?fichas ?dado)
+    (loop-for-count (?i 1 6)
+        (if (>  (nth$ ?i ?fichas) 0) then
+            (destinosmeta1 ?i ?fichas ?dado)
+        )
+    )
+)
+
+(deffunction salidasmeta2(?fichas ?dado)
+    (loop-for-count (?i 19 24)
+        (if (< (nth$ ?i ?fichas) 0) then
+            (destinosmeta2 ?i ?fichas ?dado)
+        )
+    )
+)
+
+
+
+
+(deffunction movimiento_libre_final1(?fichas ?dado) ; para blancas funcion para cuando la ficha mas lejana esta a una distancia menor que el dado y nos encontramos en el final
+    (loop-for-count (?i 1 6)
+        (if (>  (nth$ ?i ?fichas) 0) then
+            (printout t "Salida: " ?i " Destino: Meta blanca (25)"  crlf)
+            (assert (movimiento  (origen ?i) (destino 25)))
+        )
+    )
+   
+)
+
+(deffunction movimiento_libre_final2(?fichas ?dado); para negras funcion para cuando la ficha mas lejana esta a una distancia menor que el dado y nos encontramos en el final
+    (loop-for-count (?i 19 24)
+        (if (< (nth$ ?i ?fichas) 0) then
+            (printout t "Salida: " ?i " Destino: Meta negra (26)"  crlf)
+            (assert (movimiento  (origen ?i) (destino 26)))        
+        )
+    )
+   
+>>>>>>> origin/elRinconDeJosu
 )
 
 
@@ -197,6 +291,7 @@
   (assert (estado (id -1) (padre -2) (fichas (create$ -2 0 0 0 0 5 0 3 0 0 0 -5 5 0 0 0 -3 0 -5 0 0 0 0 2 0 0)) (comidas (create$ 0 0)) (turno -1) (jugador ?tipo1)))
   )
 
+<<<<<<< HEAD
 (defrule victoriaBlancas
     (declare (salience 10))
     ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas) (turno ?t) (jugador ?))
@@ -224,6 +319,23 @@
     (retract ?e)
     (bind ?id1 (+ ?id 1))
     ;(bind ?turno1 (- ?t (* 2 ?t)))
+=======
+
+
+(defrule dados
+    (declare (salience 0))
+    ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas) (turno ?t) (jugador ?))
+=>
+
+    (printout t "seguir jugando? (s/n)" crlf) ; para parar la ejecucion si se rinde el rival
+    (bind ?r (read))
+    (if (eq ?r n) then; a menos que pongas n se sigue jugando
+        (return 0)
+    )
+
+    (retract ?e)
+    (bind ?id1 (+ ?id 1))
+>>>>>>> origin/elRinconDeJosu
     (bind ?turno1 (* ?t -1))
     
     (do-for-fact ((?jugador jugador)) (eq ?jugador:color ?turno1)
@@ -281,7 +393,33 @@
     ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas 0 ?x) (turno 1) (jugador ?))
     ?d <- (dado (d1 ?d1))
     =>  
+<<<<<<< HEAD
     (salidas ?fichas ?d1 1)
+=======
+    ;mirar que las fichas no esten todas en el ultimo cuadrante de las blancas
+    (bind ?num 0); para saber si estan todas en el ultimo cuadrante
+    (bind ?pos_lejana); para saber si podemos meter aunque no sean exactos
+    (loop-for-count (?f 1 6)
+        (bind ?fi_casilla (nth$ ?f ?fichas)); numero de fichass en la casilla
+        (if (> ?fi_casilla 0) then ; solo si las fichas son blancas se suman
+            (bind ?num (+ ?num ?fi_casilla))
+            (bind ?pos_lejana ?f)
+        )
+    )
+    (bind ?num (+ ?num (nth$ 25 ?fichas))); sumamos las fichas que estan en la meta
+    (printout t "para debug: numero de fichas en el ultimo cuadrante: " ?num crlf)
+    (printout t "para debug: posicion mas lejana: " ?pos_lejana crlf)
+    (if (< ?num 15) then
+        (printout t "no es final" crlf)
+        (salidas ?fichas ?d1 1)
+    else (if (< ?pos_lejana  ?d1) then
+            (movimiento_libre_final1 ?fichas ?d1)
+        else
+            (salidasmeta1 ?fichas ?d1)
+         )
+    )
+
+>>>>>>> origin/elRinconDeJosu
 )
 ; modificado para el caso de meta y no meta
 (defrule nocomidas2 
@@ -289,7 +427,41 @@
     ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas ?x 0) (turno -1) (jugador ?))
     ?d <- (dado (d1 ?d1))
     =>  
+<<<<<<< HEAD
     (salidas ?fichas ?d1 -1)
+=======
+    (bind ?num 0); para saber si estan todas en el ultimo cuadrante
+    (bind ?pos_lejana); para saber si podemos meter aunque no sean exactos
+    (foreach ?f (create$ 24 23 22 21 20 19); orden inverso para conseguir la mas lejana
+        (bind ?fi_casilla (nth$ ?f ?fichas)); numero de fichass en la casilla
+        (if (< ?fi_casilla 0) then ; solo si las fichas son blancas se suman
+            (bind ?num (+ ?num ?fi_casilla))
+            (bind ?pos_lejana ?f)
+        )
+    )
+
+    (bind ?num (+ ?num (nth$ 26 ?fichas))); sumamos las fichas que estan en la meta
+     (printout t "para debug: numero de fichas en el ultimo cuadrante: " ?num crlf)
+    (printout t "para debug: posicion mas lejana: " ?pos_lejana crlf)
+    (if (> ?num -15) then
+        (printout t "no es final" crlf)
+        (salidas ?fichas ?d1 -1)
+    else (if (< (+ ?pos_lejana ?d1) 25) then
+            (movimiento_libre_final2 ?fichas ?d1)
+            (retract ?d)
+        else
+            (salidasmeta2 ?fichas ?d1)
+         )
+    )
+)
+
+(defrule borrarDados ; regla para borrar los dados sino existen movimientos
+    (declare (salience 10))
+    ?d1<-(dado (d1 ?) (id ?))
+    =>
+    (retract ?d1)
+    (printout t "NO HAY MOVIMIENTOS POSIBLES" crlf)
+>>>>>>> origin/elRinconDeJosu
 )
 
 
@@ -300,6 +472,7 @@
     (movimiento (origen ?) (destino ?)); si solo hay uno ni preguntar
     (test (= (str-compare ?jug humano) 0))
     =>  
+<<<<<<< HEAD
     (if (>=(length (find-all-facts ((?m movimiento)) TRUE)) 2) then
         (printout t "Dime la casilla de origen:" )
         (bind ?origen (read))
@@ -339,11 +512,56 @@
     (retract ?e)
 
     (bind ?diferencia (abs (- ?destino ?origen)))
+=======
+    (printout t "Dime la casilla de origen:" )
+    (bind ?origen (read))
+
+    (while (not(any-factp ((?m movimiento)) (eq ?m:origen ?origen)))
+         (printout t ?origen " NO es ninguna de las opciones permitidas" crlf)  ;Bucle que comprueba si el origen es una opcion
+         (printout t "Dime la casilla de origen:")
+         (bind ?origen (read))
+    )
+    (printout t "Posibles destinos: ")
+    (do-for-all-facts ((?m movimiento)) (eq ?m:origen ?origen) ;Imprime todos los que tienen el origen dado
+        (printout t ?m:destino ", ")
+    )
+    (printout t crlf)
+    (printout t "Dime la casilla de destino: ")
+    (bind ?destino (read)) 
+
+    (while (not(any-factp ((?m movimiento)) (and (eq ?m:origen ?origen) (eq ?m:destino ?destino))))
+         (printout t ?destino " NO es ninguna de las opciones permitidas" crlf) ;Bucle que comprueba si el destino es una opcion
+         (printout t "Dime la casilla de destino:" )
+         (bind ?destino (read))
+    )
+    (printout t "realizar movimiento de la ficha en " ?origen " a " ?destino crlf)
+    (do-for-all-facts ((?m movimiento))
+       (retract ?m)
+    )
+    (retract ?e)
+
+
+    (if (eq ?destino 25) then
+        (bind ?destino_dif 0)
+    )
+
+    (if (eq ?destino 6) then
+        (bind ?destino_dif 25)
+    )
+
+    (bind ?destino_dif ?destino)
+
+    (bind ?diferencia (abs (- ?destino_dif ?origen)))
+>>>>>>> origin/elRinconDeJosu
 
     (do-for-fact ((?dado dado)) ( = ?dado:d1 ?diferencia); eliminar dado usado
         (retract ?dado)
     )
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/elRinconDeJosu
     (if (= (nth$ ?destino ?fichas) (* -1 ?t)) then ; si hay una fichas del otro color
         (if (= ?t 1) then
             (bind $?comidas(replace$ ?comidas 2 2 (+ (nth$ 2 ?comidas) 1)))
@@ -377,4 +595,9 @@
 
     (imprimir ?fichas ?comidas)
 
+<<<<<<< HEAD
 )
+=======
+)
+
+>>>>>>> origin/elRinconDeJosu
