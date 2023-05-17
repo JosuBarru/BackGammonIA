@@ -198,6 +198,7 @@
     
     (bind ?v 0)
     (do-for-all-facts ((?m movimiento)) (eq ?m:idEstado ?id)
+    (bind)
     )
 
 )
