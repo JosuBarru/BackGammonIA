@@ -43,15 +43,15 @@
     )
 )
 
-(deffunction tirarDados ()
-    (seed (round (time))) 
+; (deffunction tirarDados ()
+;     (seed (round (time))) 
 
-    (bind ?d1 (random 1 6))
-    (bind ?d2 (random 1 6))
+;     (bind ?d1 (random 1 6))
+;     (bind ?d2 (random 1 6))
     
-    (printout t "Dados: " ?d1 " , " ?d2 crlf)
-    (return (create$ ?d1 ?d2))
-)
+;     (printout t "Dados: " ?d1 " , " ?d2 crlf)
+;     (return (create$ ?d1 ?d2))
+; )
 
 ;Imprimir en ascii art el tablero
 (deffunction blancaonegra(?a)
@@ -147,9 +147,12 @@
     (assert (estado (id ?id1) (padre ?id) (fichas ?fichas) (comidas ?comidas) (turno ?turno1) (jugador ?j)))
 
     (imprimir ?fichas ?comidas)
-    (bind $?d (tirarDados))
-    (assert (dado (d1(nth$ 1 ?d)) (id 1)))
-    (assert (dado (d1(nth$ 2 ?d)) (id 2)))
+    (bind ?d1 (read))
+    (bind ?d2 (read))
+    (printout t "resultado del primer dado:" crlf)
+    (assert (dado (d1 ?d1) (id 1)))
+    (printout t "resultado del primer dado:" crlf)
+    (assert (dado (d1 ?d2) (id 2)))
 )
 
 (defrule dobles 
