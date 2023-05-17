@@ -14,6 +14,7 @@
 
 (deftemplate movimiento
     (slot origen (type INTEGER)(range 0 25)) ;De 1 a 24 son las casillas del tablero, 25 es la casilla de blancas comidas y 0 la de negras comidas 
+<<<<<<< HEAD
     (slot destino (type INTEGER)(range 0 25))) ;De 1 a 24 son las casillas del tablero, 0 es la casilla de la meta de blancas y 25 la de negras 
 
 (deftemplate dado
