@@ -117,6 +117,64 @@
     
 )
 
+(deffunction evaluarBlancas (?fichas ?comidas ?dados)
+    (bind ?puntuacion 0)
+    (bind ?puntuacion (- ?puntuacion (* (nth$ 1 ?comidas) 10))) ;Restamos por piezas que nos han comido
+    (bind ?puntuacion (+ ?puntuacion (* (nth$ 2 ?comidas) 10))) ;Sumamos por piezas que comemos
+
+    (bind ?puntuacion (+ ?puntuacion (* (nth$ 25 ?fichas) 15))) ;Sumamos por las piezas que hayan llegado al final
+    (bind ?puntuacion (- ?puntuacion (* (nth$ 26 ?fichas) 15))) ;Restamos por las piezas rivales que hayan llegado al final
+
+    (loop-for-count (?i 1 24)
+        (if (> (nth$ ?i ?fichas) 0) then
+            (bind ?puntuacion (- ?puntuacion (* (nth$ ?i ?fichas) ?i))) ;Restamos la distancia total de las blancas a la meta
+        else 
+            (if (< (nth$ ?i ?fichas) 0) then
+                (bind ?puntuacion (+ ?puntuacion (* (nth$ ?i ?fichas) (- 25 ?i)))) ;Sumamos la distancia total de las negras a la meta
+            )
+        )
+    )
+
+    (if (any-factp ((?e estado)) (> ?e:fichas 6)) then
+        (bind ?puntuacion (+ ?puntuacion 50))            ; Sumamos 50 si ya podemos meter las blancas en la meta
+    )
+
+    (if (any-factp ((?e estado)) (< ?e:fichas 19)) then
+        (bind ?puntuacion (- ?puntuacion 50))            ; Restamos 50 si ya podemos meter las negras en la meta
+    )
+
+    (return ?puntuacion)
+)
+
+(deffunction evaluarNegras (?fichas ?comidas)
+    (bind ?puntuacion 0)
+    (bind ?puntuacion (- ?puntuacion (* (nth$ 2 ?comidas) 10))) ;Restamos por piezas que nos han comido
+    (bind ?puntuacion (+ ?puntuacion (* (nth$ 1 ?comidas) 10))) ;Sumamos por piezas que comemos
+
+    (bind ?puntuacion (+ ?puntuacion (* (nth$ 25 ?fichas) 15))) ;Sumamos por las piezas que hayan llegado al final
+    (bind ?puntuacion (- ?puntuacion (* (nth$ 26 ?fichas) 15))) ;Restamos por las piezas rivales que hayan llegado al final
+
+    (loop-for-count (?i 1 24)
+        (if (< (nth$ ?i ?fichas) 0) then
+            (bind ?puntuacion (- ?puntuacion (* (nth$ ?i ?fichas) (- 25 ?i)))) ;Restamos la distancia total de las negras a la meta
+        else 
+            (if (> (nth$ ?i ?fichas) 0) then
+                (bind ?puntuacion (+ ?puntuacion (* (nth$ ?i ?fichas) ?i))) ;Sumamos la distancia total de las blancas a la meta
+            )
+        )
+    )
+
+    (if (any-factp ((?e estado)) (< ?e:fichas 19)) then
+        (bind ?puntuacion (+ ?puntuacion 50))            ; Sumamos 50 si ya podemos meter las negras en la meta
+    )
+
+    (if (any-factp ((?e estado)) (> ?e:fichas 6)) then
+        (bind ?puntuacion (- ?puntuacion 50))            ; Restamos 50 si ya podemos meter las blancas en la meta
+    )
+
+    (return ?puntuacion)
+)
+
 
 ;Rules
 (defrule inicio
