@@ -646,7 +646,7 @@
     (if (eq (nth$ 1 ?res) FALSE) then
         (printout t "no es final" crlf)
         (salidas ?fichas ?d1 -1)
-    else (if (< (+ (nth$ 2 ?res) ?d1) 25) then
+    else (if (> (+ (nth$ 2 ?res) ?d1) 25) then
             (movimiento_libre_final2 ?fichas ?d1)
         else
             (salidasmeta2 ?fichas ?d1)
@@ -825,31 +825,23 @@
 
 
 (defrule victoriaBlancas
-    (declare (salience 10))
+    (declare (salience 150))
     ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas) (turno ?t) (jugador ?))
     (test (eq (nth$ 25 $?fichas) 15))
     =>
     (retract ?e)
     (printout t "VICTORIA DE LAS BLANCAS" crlf)
+    (halt)
 )
 
 (defrule victoriaNegras
-    (declare (salience 10))
+    (declare (salience 150))
     ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas) (turno ?t) (jugador ?))
     (test ( eq (nth$ 26 $?fichas) -15))
     =>
     (retract ?e)
     (printout t "VICTORIA DE LAS NEGRAS" crlf)
-)
-
-(defrule eliminarDado
-    (declare (salience 20))
-    ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas) (turno 1) (jugador ?jug))
-    ?d<-(dado (d1 ?) (id ?))
-    (dado (d1 ?) (id ?))
-    (test (= (str-compare ?jug cpu) 0))
-    =>
-    (retract ?d)
+    (halt)
 )
 
 (defrule eleccionCPUBlancas
