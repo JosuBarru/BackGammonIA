@@ -19,12 +19,14 @@
 (deftemplate movimiento
     (slot origen (type INTEGER)(range 0 25)) ;De 1 a 24 son las casillas del tablero, 25 es la casilla de blancas comidas y 0 la de negras comidas 
     (slot destino (type INTEGER)(range 1 26)) ;De 1 a 24 son las casillas del tablero, 25 es la casilla de la meta de blancas y 26 la de negras 
-    (slot dado (type INTEGER)(range 1 6)))
-
-(deftemplate movimientofinal
-    (slot origen (type INTEGER)(range 0 25))
-    (slot destino (type INTEGER)(range 1 26))
     (slot dado (type INTEGER)(range 1 6))
+)
+
+(deftemplate movimientoCPU
+    (slot origen (type INTEGER)(range 0 25)) ;De 1 a 24 son las casillas del tablero, 25 es la casilla de blancas comidas y 0 la de negras comidas 
+    (slot destino (type INTEGER)(range 1 26)) ;De 1 a 24 son las casillas del tablero, 25 es la casilla de la meta de blancas y 26 la de negras 
+    (slot dado (type INTEGER)(range 1 6))
+    (slot idEstado (type INTEGER)) ;Nos indica el estado al que corresponde el movimiento
 )
 
 
@@ -183,7 +185,7 @@
     (loop-for-count (?i 1 6)
         (if (>  (nth$ ?i ?fichas) 0) then
             (printout t "Salida: " ?i " Destino: Meta blanca (25)"  crlf)
-            (assert (movimientofinal  (origen ?i) (destino 25) (dado ?dado)))
+            (assert (movimiento  (origen ?i) (destino 25) (dado ?dado)))
         )
     )
    
@@ -193,7 +195,7 @@
     (loop-for-count (?i 19 24)
         (if (< (nth$ ?i ?fichas) 0) then
             (printout t "Salida: " ?i " Destino: Meta negra (26)"  crlf)
-            (assert (movimientofinal  (origen ?i) (destino 26)  (dado ?dado)))        
+            (assert (movimiento  (origen ?i) (destino 26)  (dado ?dado)))        
         )
     )
    
@@ -244,7 +246,7 @@
 
 (deffunction ult_cuadefi1 (?fichas ?comidas ); devolver TRUe si y solo si solo hay  piezas blancas en el ultimo cuadrante 
 
-    (do-for-count(?i 7 24)
+    (loop-for-count(?i 7 24)
         (if (> (nth$ ?i ?fichas) 0) then
             (return FALSE)
         )
@@ -256,8 +258,8 @@
 
 )
 
-(deffunction ult-cuadefi2 (?fichas ?comidas)
-    (do-for-count(?i 1 18)
+(deffunction ult_cuadefi2 (?fichas ?comidas)
+    (loop-for-count(?i 1 18)
         (if (< (nth$ ?i ?fichas) 0) then
             (return FALSE)
         )
@@ -269,107 +271,253 @@
 )
 
 
+
+
+(deffunction assertState (?origen ?destino ?id ?padre ?t)
+
+    (do-for-fact ((?e estado)) (eq ?e:id ?padre)
+
+        (if (= (nth$ ?destino ?e:fichas) (* -1 ?t)) then ; si hay una fichas del otro color
+            (if (= ?t 1) then
+                (bind $?comidas(replace$ ?e:comidas 2 2 (+ (nth$ 2 ?e:comidas) 1)))
+                (bind $?fichas (replace$ ?e:fichas ?destino ?destino 0))
+            )
+            (if (= ?t -1) then
+                (bind $?comidas (replace$ ?e:comidas 1 1 (+ (nth$ 1 ?e:comidas) 1)))
+                (bind $?fichas (replace$ ?e:fichas ?destino ?destino 0))
+            )
+        )
+        (if (= ?origen 25) then
+            (bind $?comidas (replace$ ?e:comidas 1 1 (- (nth$ 1 ?e:comidas) 1)))
+            (printout  t "comidas: "  crlf)
+            else
+            (if (= ?origen 0) then
+                (bind $?comidas (replace$ ?e:comidas 2 2 (- (nth$ 2 ?e:comidas) 1)))
+                (printout  t "comidas: "  crlf)
+                else
+                (bind $?fichas (replace$ ?e:fichas ?origen ?origen (- (nth$ ?origen ?e:fichas) ?t))) ; una ficha menos en el origen
+            )
+        )
+
+
+        (bind $?fichas (replace$ ?e:fichas ?destino ?destino (+ (nth$ ?destino ?e:fichas) ?t))) ; una ficha mas en el destino
+      
+        (do-for-fact ((?jugador jugador)) (eq ?jugador:color ?t)
+            (bind ?j ?jugador:tipo)
+        )
+
+        (assert (estado (id ?id) (padre ?padre) (fichas ?fichas) (comidas ?e:comidas) (turno ?t) (jugador ?j)))
+    )
+)
+
+
 ;Agente Inteligente
 
-(deffunction evaluarBlancas (?fichas ?comidas)
-    (if (= (nth$ 25 ?fichas) 15) then
-        (return 1000)
-    )
-    (bind ?puntuacion 0)
-    (bind ?puntuacion (- ?puntuacion (* (nth$ 1 ?comidas) 10))) ;Restamos por piezas que nos han comido
-    (bind ?puntuacion (+ ?puntuacion (* (nth$ 2 ?comidas) 10))) ;Sumamos por piezas que comemos
+(deffunction evaluarBlancas (?id)
+    (do-for-fact ((?e estado)) (eq ?id ?e:id)
+        (if (= (nth$ 25 ?e:fichas) 15) then
+            (return 1000)
+        )
+        (bind ?puntuacion 0)
+        (bind ?puntuacion (- ?puntuacion (* (nth$ 1 ?e:comidas) 10))) ;Restamos por piezas que nos han comido
+        (bind ?puntuacion (+ ?puntuacion (* (nth$ 2 ?e:comidas) 10))) ;Sumamos por piezas que comemos
 
-    (bind ?puntuacion (+ ?puntuacion (* (nth$ 25 ?fichas) 15))) ;Sumamos por las piezas que hayan llegado al final
-    (bind ?puntuacion (- ?puntuacion (* (nth$ 26 ?fichas) 15))) ;Restamos por las piezas rivales que hayan llegado al final
+        (bind ?puntuacion (+ ?puntuacion (* (nth$ 25 ?e:fichas) 15))) ;Sumamos por las piezas que hayan llegado al final
+        (bind ?puntuacion (- ?puntuacion (* (nth$ 26 ?e:fichas) 15))) ;Restamos por las piezas rivales que hayan llegado al final
 
-    (loop-for-count (?i 1 24)
-        (if (> (nth$ ?i ?fichas) 0) then
-            (bind ?puntuacion (- ?puntuacion (* (nth$ ?i ?fichas) ?i))) ;Restamos la distancia total de las blancas a la meta
-        else 
-            (if (< (nth$ ?i ?fichas) 0) then
-                (bind ?puntuacion (+ ?puntuacion (* (nth$ ?i ?fichas) (- 25 ?i)))) ;Sumamos la distancia total de las negras a la meta
+        (loop-for-count (?i 1 24)
+            (if (> (nth$ ?i ?e:fichas) 0) then
+                (bind ?puntuacion (- ?puntuacion (* (nth$ ?i ?e:fichas) ?i))) ;Restamos la distancia total de las blancas a la meta
+            else 
+                (if (< (nth$ ?i ?e:fichas) 0) then
+                    (bind ?puntuacion (+ ?puntuacion (* (nth$ ?i ?e:fichas) (- 25 ?i)))) ;Sumamos la distancia total de las negras a la meta
+                )
+            )
+            (if (= (nth$ ?i ?e:fichas) 1) then
+                (bind ?puntuacion (- ?puntuacion 50)) ;Restamos por dejar una sola ficha en una casilla
             )
         )
-        (if (= (nth$ ?i ?fichas) 1) then
-            (bind ?puntuacion (- ?puntuacion 50)) ;Restamos por dejar una sola ficha en una casilla
+        (bind ?res1 (ult_cuadefi1 ?e:fichas ?e:comidas))
+        (bind ?res2 (ult_cuadefi2 ?e:fichas ?e:comidas))
+
+        (if (eq ?res1 TRUE) then
+            (bind ?puntuacion (+ ?puntuacion 50))            ; Sumamos 50 si ya podemos meter las blancas en la meta
         )
-    )
-    (bind ?res1 (ult_cuadefi1 ?fichas ?comidas))
-    (bind ?res2 (ult_cuadefi2 ?fichas ?comidas))
 
-    (if (eq ?res1 TRUE) then
-        (bind ?puntuacion (+ ?puntuacion 50))            ; Sumamos 50 si ya podemos meter las blancas en la meta
-    )
-
-    (if (eq ?res2 TRUE) then
-        (bind ?puntuacion (+ ?puntuacion 50))            ; Restamos 50 si ya pueden meter las negras en la meta
-    )
-
-    (return ?puntuacion)
-)
-
-(deffunction evaluarNegras (?fichas ?comidas)
-    (if (= (nth$ 26 ?fichas) -15) then
-        (return 1000)
-    )
-    (bind ?puntuacion 0)
-    (bind ?puntuacion (- ?puntuacion (* (nth$ 2 ?comidas) 10))) ;Restamos por piezas que nos han comido
-    (bind ?puntuacion (+ ?puntuacion (* (nth$ 1 ?comidas) 10))) ;Sumamos por piezas que comemos
-
-    (bind ?puntuacion (+ ?puntuacion (* (nth$ 25 ?fichas) 15))) ;Sumamos por las piezas que hayan llegado al final
-    (bind ?puntuacion (- ?puntuacion (* (nth$ 26 ?fichas) 15))) ;Restamos por las piezas rivales que hayan llegado al final
-
-    (loop-for-count (?i 1 24)
-        (if (< (nth$ ?i ?fichas) 0) then
-            (bind ?puntuacion (- ?puntuacion (* (nth$ ?i ?fichas) (- 25 ?i)))) ;Restamos la distancia total de las negras a la meta
-        else 
-            (if (> (nth$ ?i ?fichas) 0) then
-                (bind ?puntuacion (+ ?puntuacion (* (nth$ ?i ?fichas) ?i))) ;Sumamos la distancia total de las blancas a la meta
-            )
+        (if (eq ?res2 TRUE) then
+            (bind ?puntuacion (+ ?puntuacion 50))            ; Restamos 50 si ya pueden meter las negras en la meta
         )
-        (if (= (nth$ ?i ?fichas) -1) then
-            (bind ?puntuacion (- ?puntuacion 50)) ;Restamos por dejar una sola ficha en una casilla
-        )
+
+        (return ?puntuacion)
     )
-
-    (bind ?res1 (ult_cuadefi1 ?fichas ?comidas))
-    (bind ?res2 (ult_cuadefi2 ?fichas ?comidas))
-
-    (if (eq ?res1 TRUE) then
-        (bind ?puntuacion (+ ?puntuacion 50))            ; Sumamos 50 si ya podemos meter las negras en la meta
-    )
-
-    (if (eq ?res2 TRUE) then
-        (bind ?puntuacion (+ ?puntuacion 50))            ; Restamos 50 si ya pueden meter las blancas en la meta
-    )
-
-    (return ?puntuacion)
-)
-
-(deffunction expectimaxBlancas (?id ?next) ; Si next es 1 es max, si es 0, expValue
-    (do-for-fact ((?e estado)) (eq ?e:id ?id)
-        (if (or (= (nth$ 25 ?e:fichas) 15) (= ?e:profundidad 10)) then              ;Profundidad maxima es 10
-            (return (evaluarBlancas ?e:fichas ?e:comidas))
-        )
-    )
-)
-
-(deffunction expectimaxNegras (?id ?next) ; Si next es 1 es max, si es 0, expValue
-    (do-for-fact ((?e estado)) (eq ?e:id ?id)
-        (if (or (= (nth$ 26 ?e:fichas) -15) (= ?e:profundidad 10)) then              ;Profundidad maxima es 10
-            (return (evaluarNegras ?e:fichas ?e:comidas))
-        )
-    )
-)
-
-(deffunction expValue (?id)
     
-    (bind ?v 0)
-    (do-for-all-facts ((?m movimiento)) (eq ?m:idEstado ?id)
-    (bind ?v (+ ?v expectimax ?))
+)
+
+(deffunction evaluarNegras (?id)
+    (do-for-fact ((?e estado)) (eq ?id ?e:id)
+        (if (= (nth$ 26 ?e:fichas) -15) then
+            (return 1000)
+        )
+        (bind ?puntuacion 0)
+        (bind ?puntuacion (- ?puntuacion (* (nth$ 2 ?e:comidas) 10))) ;Restamos por piezas que nos han comido
+        (bind ?puntuacion (+ ?puntuacion (* (nth$ 1 ?e:comidas) 10))) ;Sumamos por piezas que comemos
+
+        (bind ?puntuacion (+ ?puntuacion (* (nth$ 25 ?e:fichas) 15))) ;Sumamos por las piezas que hayan llegado al final
+        (bind ?puntuacion (- ?puntuacion (* (nth$ 26 ?e:fichas) 15))) ;Restamos por las piezas rivales que hayan llegado al final
+
+        (loop-for-count (?i 1 24)
+            (if (< (nth$ ?i ?e:fichas) 0) then
+                (bind ?puntuacion (- ?puntuacion (* (nth$ ?i ?e:fichas) (- 25 ?i)))) ;Restamos la distancia total de las negras a la meta
+            else 
+                (if (> (nth$ ?i ?e:fichas) 0) then
+                    (bind ?puntuacion (+ ?puntuacion (* (nth$ ?i ?e:fichas) ?i))) ;Sumamos la distancia total de las blancas a la meta
+                )
+            )
+            (if (= (nth$ ?i ?e:fichas) -1) then
+                (bind ?puntuacion (- ?puntuacion 50)) ;Restamos por dejar una sola ficha en una casilla
+            )
+        )
+
+        (bind ?res1 (ult_cuadefi1 ?e:fichas ?e:comidas))
+        (bind ?res2 (ult_cuadefi2 ?e:fichas ?e:comidas))
+
+        (if (eq ?res1 TRUE) then
+            (bind ?puntuacion (+ ?puntuacion 50))            ; Sumamos 50 si ya podemos meter las negras en la meta
+        )
+
+        (if (eq ?res2 TRUE) then
+            (bind ?puntuacion (+ ?puntuacion 50))            ; Restamos 50 si ya pueden meter las blancas en la meta
+        )
+
+        (return ?puntuacion)
+    )
+)
+
+(deffunction expectimaxBlancas (?profundidad ?id ?next))
+(deffunction expectimaxNegras (?profundidad ?id ?next))
+
+(deffunction maxValueBlancas (?profundidad ?id)
+    (bind ?numHijo (+ ?id 1))
+    (bind ?v -999999)
+    (do-for-fact ((?e estado)) (eq ?e:id ?id)
+        (loop-for-count (?dado 1 6)
+            (salidas ?e:fichas ?dado 1)         ;Obtenemos todos los posibles movimientos
+        )
     )
 
+    (bind ?newProfundidad (+ ?profundidad 1))
+    (do-for-all-facts ((?m movimiento)) (eq ?m:idEstado ?id)
+        (assertState ?m:origen ?m:destino ?numHijo ?id 1)       ;Dado un movimiento obtenemos el sucesor
+        (bind ?v (max ?v (expectimaxBlancas ?newProfundidad ?numHijo 0)))      
+        (do-for-fact ((?est estado)) (eq ?est:id ?numHijo)
+            (retract ?est)                                ;Borramos el estado para que no colisione
+        )
+        (retract ?m)
+    )
+
+    (return ?v)
 )
+
+(deffunction maxValueNegras (?profundidad ?id)
+    (bind ?numHijo (+ ?id 1))
+    (bind ?v -999999)
+    (do-for-fact ((?e estado)) (eq ?e:id ?id)
+        (loop-for-count (?dado 1 6)
+            (salidas ?e:fichas ?dado -1)         ;Obtenemos todos los posibles movimientos
+        )
+    )
+
+    (bind ?newProfundidad (+ ?profundidad 1))
+    (do-for-all-facts ((?m movimiento)) (eq ?m:idEstado ?id)
+        (assertState ?m:origen ?m:destino ?numHijo ?id -1)       ;Dado un movimiento obtenemos el sucesor
+        (bind ?v (max ?v (expectimaxNegras ?newProfundidad ?numHijo 0)))      
+        (do-for-fact ((?est estado)) (eq ?est:id ?numHijo)
+            (retract ?est)                                ;Borramos el estado para que no colisione
+        )
+        (retract ?m)
+    )
+
+    (return ?v)
+)
+
+(deffunction expValueBlancas (?profundidad ?id)
+    (bind ?numHijo (+ ?id 1))
+    (bind ?v 0)
+    (do-for-fact ((?e estado)) (eq ?e:id ?id)
+        (loop-for-count (?dado 1 6)
+            (salidas ?e:fichas ?dado 1)         ;Obtenemos todos los posibles movimientos
+        )
+    )
+    
+    (bind ?total (length (find-all-facts ((?m movimiento)) (eq ?m:idEstado ?id))))
+    (bind ?newProfundidad (+ ?profundidad 1))
+
+    (do-for-all-facts ((?m movimiento)) (eq ?m:idEstado ?id)
+        (assertState ?m:origen ?m:destino ?numHijo ?id 1)       ;Dado un movimiento obtenemos el sucesor
+        (bind ?v (+ ?v (expectimaxBlancas ?newProfundidad ?numHijo 1)))         
+        (do-for-fact ((?est estado)) (eq ?est:id ?numHijo)
+            (retract ?est)                                ;Borramos el estado para que no colisione
+        )
+        (retract ?m)
+    )
+
+    (bind ?v (/ ?v ?total))
+    (return ?v)
+
+)
+
+(deffunction expValueNegras (?profundidad ?id)
+    (bind ?numHijo (+ ?id 1))
+    (bind ?v 0)
+    (do-for-fact ((?e estado)) (eq ?e:id ?id)
+        (loop-for-count (?dado 1 6)
+            (salidas ?e:fichas ?dado -1)         ;Obtenemos todos los posibles movimientos
+        )
+    )
+    
+    (bind ?total (length (find-all-facts ((?m movimiento)) (eq ?m:idEstado ?id))))
+    (bind ?newProfundidad (+ ?profundidad 1))
+
+    (do-for-all-facts ((?m movimiento)) (eq ?m:idEstado ?id)
+        (assertState ?m:origen ?m:destino ?numHijo ?id -1)       ;Dado un movimiento obtenemos el sucesor
+        (bind ?v (+ ?v (expectimaxNegras ?newProfundidad ?numHijo 1)))         
+        (do-for-fact ((?est estado)) (eq ?est:id ?numHijo)
+            (retract ?est)                                ;Borramos el estado para que no colisione
+        )
+        (retract ?m)
+    )
+
+    (bind ?v (/ ?v ?total))
+    (return ?v)
+)
+
+(deffunction expectimaxBlancas (?profundidad ?id ?next) ; Si next es 1 es maxValue, si es 0 expValue
+    (do-for-fact ((?e estado)) (eq ?e:id ?id)
+        (if (or (= (nth$ 25 ?e:fichas) 15) (= ?profundidad 10)) then              ;Profundidad maxima es 10
+            (return (evaluarBlancas ?e:id))
+        )
+    )
+    (if (= ?next 1) then
+        (return (maxValueBlancas ?profundidad ?id))
+    else
+        (return (expValueNegras ?profundidad ?id))
+    )
+)
+
+(deffunction expectimaxNegras (?profundidad ?id ?next) ; Si next es 1 es maxValue, si es 0 expValue
+    (do-for-fact ((?e estado)) (eq ?e:id ?id)
+        (if (or (= (nth$ 26 ?e:fichas) -15) (= ?profundidad 10)) then              ;Profundidad maxima es 10
+            (return (evaluarNegras ?e:id))
+        )
+    )
+    (if (= ?next 1) then
+        (return (maxValueNegras ?profundidad ?id))
+    else
+        (return (expValueBlancas ?profundidad ?id))
+    )
+)
+
+
 
 ;Rules
 (defrule inicio
@@ -388,9 +536,9 @@
     
   (assert (jugador (id 2) (tipo ?tipo2) (color ?color2)))
     
-   (assert (estado (id -1) (padre -2) (fichas (create$ -2 0 0 0 0 5 0 3 0 0 0 -5 5 0 0 0 -3 0 -5 0 0 0 0 2 0 0)) (comidas (create$ 0 0)) (turno -1) (jugador ?tipo1)))
+   ;(assert (estado (id -1) (padre -2) (fichas (create$ -2 0 0 0 0 5 0 3 0 0 0 -5 5 0 0 0 -3 0 -5 0 0 0 0 2 0 0)) (comidas (create$ 0 0)) (turno -1) (jugador ?tipo1)))
 
-;    (assert (estado (id -1) (padre -2) (fichas (create$ 5 0 5 0 5 0 0 0 0 0 0 0 0 0 0 0 0 -5 0  -5 0 0 -5 0 0 0)) (comidas (create$ 0 0)) (turno -1) (jugador ?tipo1)))
+   (assert (estado (id -1) (padre -2) (fichas (create$ 5 0 5 0 5 0 0 0 0 0 0 0 0 0 0 0 0 -5 0  -5 0 0 -5 0 0 0)) (comidas (create$ 0 0)) (turno -1) (jugador ?tipo1)))
 
   )
 
@@ -420,7 +568,7 @@
     (imprimir ?fichas ?comidas)
     (printout t "resultado del primer dado:" crlf)
     (bind ?d1 (read))
-    (printout t "resultado del primer dado:" crlf)
+    (printout t "resultado del segundo dado:" crlf)
     (bind ?d2 (read))
     (assert (dado (d1 ?d1) (id 1)))
     (assert (dado (d1 ?d2) (id 2)))
@@ -492,7 +640,7 @@
     (if (eq (nth$ 1 ?res) FALSE) then
         (printout t "no es final" crlf)
         (salidas ?fichas ?d1 -1)
-    else (if (< (+ (nth$ 2 ?res) ?d1) 25) then
+    else (if (> (+ (nth$ 2 ?res) ?d1) 25) then
             (movimiento_libre_final2 ?fichas ?d1)
         else
             (salidasmeta2 ?fichas ?d1)
@@ -556,25 +704,155 @@
         (retract ?dado)
     )
 
-    ; (bind ?destino_dif ?destino)
+    (if (= (nth$ ?destino ?fichas) (* -1 ?t)) then ; si hay una fichas del otro color
+        (if (= ?t 1) then
+            (bind $?comidas(replace$ ?comidas 2 2 (+ (nth$ 2 ?comidas) 1)))
+            (bind $?fichas (replace$ ?fichas ?destino ?destino 0))
+        )
+        (if (= ?t -1) then
+            (bind $?comidas (replace$ ?comidas 1 1 (+ (nth$ 1 ?comidas) 1)))
+            (bind $?fichas (replace$ ?fichas ?destino ?destino 0))
+        )
+    )
+    (if (= ?origen 25) then
+        (bind $?comidas (replace$ ?comidas 1 1 (- (nth$ 1 ?comidas) 1)))
+        (printout  t "comidas: "  crlf)
+    else
+        (if (= ?origen 0) then
+            (bind $?comidas (replace$ ?comidas 2 2 (- (nth$ 2 ?comidas) 1)))
+            (printout  t "comidas: "  crlf)
+            else
+            (bind $?fichas (replace$ ?fichas ?origen ?origen (- (nth$ ?origen ?fichas) ?t))) ; una ficha menos en el origen
+        )
+    )
 
 
-    ; (if (eq ?destino 25) then
-    ;     (bind ?destino_dif 0)
-    ; )
+    (bind $?fichas (replace$ ?fichas ?destino ?destino (+ (nth$ ?destino ?fichas) ?t))) ; una ficha mas en el destino
 
-    ; (if (eq ?destino 26) then
-    ;     (bind ?destino_dif 25)
-    ; )
+    (do-for-fact ((?jugador jugador)) (eq ?jugador:color ?t)
+    (bind ?j ?jugador:tipo)
+    )
+
+    (assert (estado (id ?id) (padre ?padre) (fichas ?fichas) (comidas ?comidas) (turno ?t) (jugador ?j)))
+
+    (imprimir ?fichas ?comidas)
+
+)
+
+; (defrule eleccion_final
+;      (declare (salience 10))
+;     ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas) (turno ?t) (jugador ?jug))
+;     (movimiento (origen ?) (destino ?) (dado ?d)); si solo hay uno ni preguntar
+;     (test (= (str-compare ?jug humano) 0))
+;     =>
+;     (if (>=(length (find-all-facts ((?m movimiento)) TRUE)) 2) then
+;         (printout t "Dime la casilla de origen:" )
+;         (bind ?origen (read))
+
+;         (while (not(any-factp ((?m movimiento)) (eq ?m:origen ?origen)))
+;             (printout t ?origen " NO es ninguna de las opciones permitidas" crlf)  ;Bucle que comprueba si el origen es una opcion
+;             (printout t "Dime la casilla de origen:")
+;             (bind ?origen (read))
+;         )
+;         (printout t "Posibles destinos: ")
+;         (do-for-all-facts ((?m movimiento)) (eq ?m:origen ?origen) ;Imprime todos los que tienen el origen dado
+;             (printout t ?m:destino ", ")
+;         )
+;         (printout t crlf)
+;         (printout t "Dime la casilla de destino: ")
+;         (bind ?destino (read)) 
+
+;         (while (not(any-factp ((?m movimiento)) (and (eq ?m:origen ?origen) (eq ?m:destino ?destino))))
+;             (printout t ?destino " NO es ninguna de las opciones permitidas" crlf) ;Bucle que comprueba si el destino es una opcion
+;             (printout t "Dime la casilla de destino:" )
+;             (bind ?destino (read))
+;         )
+;         (printout t "realizar movimiento de la ficha en " ?origen " a " ?destino crlf)
+;         (do-for-all-facts ((?m movimiento))
+;             (retract ?m)
+;         )
+;     else
+
+;         (do-for-fact ((?m movimiento)) TRUE
+;             (bind ?origen ?m:origen)
+;             (bind ?destino ?m:destino)
+;             (printout t "realizar movimiento de la ficha en " ?origen " a " ?destino crlf)
+;             (retract ?m)
+;         )
+;     )
+;     (retract ?e)
+;     (do-for-fact ((?dado dado)) (eq ?dado:d1 ?d) ; eliminar dado usado
+;         (retract ?dado)
+;     )
+
+;     (bind $?fichas (replace$ ?fichas ?origen ?origen (- (nth$ ?origen ?fichas) ?t))) ; una ficha menos en el origen
+;     (bind $?fichas (replace$ ?fichas ?destino ?destino (+ (nth$ ?destino ?fichas) ?t))) ; una ficha mas en el destino
+
+;     (do-for-fact ((?jugador jugador)) (eq ?jugador:color ?t)
+;     (bind ?j ?jugador:tipo)
+;     )
+
+;     (assert (estado (id ?id) (padre ?padre) (fichas ?fichas) (comidas ?comidas) (turno ?t) (jugador ?j)))
+
+;     (imprimir ?fichas ?comidas)
+
+; )
 
 
-    ; (bind ?diferencia (abs (- ?destino_dif ?origen)))
+(defrule victoriaBlancas
+    (declare (salience 150))
+    ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas) (turno ?t) (jugador ?))
+    (test (eq (nth$ 25 $?fichas) 15))
+    =>
+    (retract ?e)
+    (printout t "VICTORIA DE LAS BLANCAS" crlf)
+    (halt)
+)
 
-    ; (do-for-fact ((?dado dado)) (eq ?dado:d1 ?diferencia); eliminar dado usado
-    ;     (retract ?dado)
-    ; )
+(defrule victoriaNegras
+    (declare (salience 150))
+    ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas) (turno ?t) (jugador ?))
+    (test ( eq (nth$ 26 $?fichas) -15))
+    =>
+    (retract ?e)
+    (printout t "VICTORIA DE LAS NEGRAS" crlf)
+    (halt)
+)
 
+(defrule eleccionCPUBlancas
+    (declare (salience 20))
+    ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas) (turno 1) (jugador ?jug))
+    (movimiento (origen ?) (destino ?) (dado ?d)); si solo hay uno ni preguntar
+    (test (= (str-compare ?jug cpu) 0))
+    =>  
+    (bind ?t 1)
+    (bind ?v -999999)
+    (bind ?numHijo (+ ?id 1))
+    (do-for-all-facts ((?m movimiento)) TRUE
+        (assertState ?m:origen ?m:destino ?numHijo ?id 1)       ;Dado un movimiento obtenemos el sucesor
 
+        (bind ?aux (evaluarBlancas ?numHijo))    
+        (if (> ?aux ?v) then
+            (bind ?v ?aux)
+            (bind ?origen ?m:origen)
+            (bind ?destino ?m:destino)
+            (bind ?d ?m:dado)
+        )
+        (do-for-fact ((?est estado)) (eq ?est:id ?numHijo)
+            (retract ?est)                                ;Borramos el estado para que no colisione
+        )
+        
+        (retract ?m)
+    )
+
+    (do-for-all-facts ((?est estado)) (> ?est:id ?id)
+            (retract ?est)                                ;Borramos el estado para que no colisione
+    )
+
+    (do-for-fact ((?dado dado)) (eq ?dado:d1 ?d) ; eliminar dado usado
+        (retract ?dado)
+    )
+    (printout t "realizar movimiento de la ficha en " ?origen " a " ?destino crlf)
     (if (= (nth$ ?destino ?fichas) (* -1 ?t)) then ; si hay una fichas del otro color
         (if (= ?t 1) then
             (bind $?comidas(replace$ ?comidas 2 2 (+ (nth$ 2 ?comidas) 1)))
@@ -606,57 +884,65 @@
 
     (assert (estado (id ?id) (padre ?padre) (fichas ?fichas) (comidas ?comidas) (turno ?t) (jugador ?j)))
 
+    (retract ?e)
+
     (imprimir ?fichas ?comidas)
 
 )
 
-(defrule eleccion_final
-     (declare (salience 10))
-    ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas) (turno ?t) (jugador ?jug))
-    (movimientofinal (origen ?) (destino ?) (dado ?d)); si solo hay uno ni preguntar
-    (test (= (str-compare ?jug humano) 0))
-    =>
-    (if (>=(length (find-all-facts ((?m movimientofinal)) TRUE)) 2) then
-        (printout t "Dime la casilla de origen:" )
-        (bind ?origen (read))
+(defrule eleccionCPUNegras
+    (declare (salience 20))
+    ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas) (turno -1) (jugador ?jug))
+    (movimiento (origen ?) (destino ?) (dado ?d)); si solo hay uno ni preguntar
+    (test (= (str-compare ?jug cpu) 0))
+    =>  
+    (bind ?t -1)
+    (bind ?v -999999)
+    (bind ?numHijo (+ ?id 1))
+    (do-for-all-facts ((?m movimiento)) TRUE
+        (assertState ?m:origen ?m:destino ?numHijo ?id 1)       ;Dado un movimiento obtenemos el sucesor
 
-        (while (not(any-factp ((?m movimientofinal)) (eq ?m:origen ?origen)))
-            (printout t ?origen " NO es ninguna de las opciones permitidas" crlf)  ;Bucle que comprueba si el origen es una opcion
-            (printout t "Dime la casilla de origen:")
-            (bind ?origen (read))
-        )
-        (printout t "Posibles destinos: ")
-        (do-for-all-facts ((?m movimientofinal)) (eq ?m:origen ?origen) ;Imprime todos los que tienen el origen dado
-            (printout t ?m:destino ", ")
-        )
-        (printout t crlf)
-        (printout t "Dime la casilla de destino: ")
-        (bind ?destino (read)) 
-
-        (while (not(any-factp ((?m movimientofinal)) (and (eq ?m:origen ?origen) (eq ?m:destino ?destino))))
-            (printout t ?destino " NO es ninguna de las opciones permitidas" crlf) ;Bucle que comprueba si el destino es una opcion
-            (printout t "Dime la casilla de destino:" )
-            (bind ?destino (read))
-        )
-        (printout t "realizar movimiento de la ficha en " ?origen " a " ?destino crlf)
-        (do-for-all-facts ((?m movimientofinal))
-            (retract ?m)
-        )
-    else
-
-        (do-for-fact ((?m movimientofinal)) TRUE
+        (bind ?aux (evaluarNegras ?numHijo))    
+        (if (> ?aux ?v) then
+            (bind ?v ?aux)
             (bind ?origen ?m:origen)
             (bind ?destino ?m:destino)
-            (printout t "realizar movimiento de la ficha en " ?origen " a " ?destino crlf)
-            (retract ?m)
-        )
+            (bind ?d ?m:dado)
+        )        
+        (retract ?m)
     )
-    (retract ?e)
+
+    (do-for-all-facts ((?est estado)) (> ?est:id ?id)
+            (retract ?est)                                ;Borramos el estado para que no colisione
+    )
+
     (do-for-fact ((?dado dado)) (eq ?dado:d1 ?d) ; eliminar dado usado
         (retract ?dado)
     )
+    (printout t "realizar movimiento de la ficha en " ?origen " a " ?destino crlf)
+    (if (= (nth$ ?destino ?fichas) (* -1 ?t)) then ; si hay una fichas del otro color
+        (if (= ?t 1) then
+            (bind $?comidas(replace$ ?comidas 2 2 (+ (nth$ 2 ?comidas) 1)))
+            (bind $?fichas (replace$ ?fichas ?destino ?destino 0))
+        )
+        (if (= ?t -1) then
+            (bind $?comidas (replace$ ?comidas 1 1 (+ (nth$ 1 ?comidas) 1)))
+            (bind $?fichas (replace$ ?fichas ?destino ?destino 0))
+        )
+    )
+    (if (= ?origen 25) then
+        (bind $?comidas (replace$ ?comidas 1 1 (- (nth$ 1 ?comidas) 1)))
+        (printout  t "comidas: "  crlf)
+        else
+        (if (= ?origen 0) then
+            (bind $?comidas (replace$ ?comidas 2 2 (- (nth$ 2 ?comidas) 1)))
+            (printout  t "comidas: "  crlf)
+            else
+            (bind $?fichas (replace$ ?fichas ?origen ?origen (- (nth$ ?origen ?fichas) ?t))) ; una ficha menos en el origen
+        )
+    )
 
-    (bind $?fichas (replace$ ?fichas ?origen ?origen (- (nth$ ?origen ?fichas) ?t))) ; una ficha menos en el origen
+
     (bind $?fichas (replace$ ?fichas ?destino ?destino (+ (nth$ ?destino ?fichas) ?t))) ; una ficha mas en el destino
 
     (do-for-fact ((?jugador jugador)) (eq ?jugador:color ?t)
@@ -665,27 +951,8 @@
 
     (assert (estado (id ?id) (padre ?padre) (fichas ?fichas) (comidas ?comidas) (turno ?t) (jugador ?j)))
 
+    (retract ?e)
+
     (imprimir ?fichas ?comidas)
 
 )
-
-
-(defrule victoriaBlancas
-    (declare (salience 10))
-    ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas) (turno ?t) (jugador ?))
-    (test (eq (nth$ 25 $?fichas) 15))
-    =>
-    (retract ?e)
-    (printout t "VICTORIA DE LAS BLANCAS" crlf)
-)
-
-(defrule victoriaNegras
-    (declare (salience 10))
-    ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas) (turno ?t) (jugador ?))
-    (test ( eq (nth$ 26 $?fichas) -15))
-    =>
-    (retract ?e)
-    (printout t "VICTORIA DE LAS NEGRAS" crlf)
-)
-
-
