@@ -29,12 +29,6 @@
     (slot idEstado (type INTEGER)) ;Nos indica el estado al que corresponde el movimiento
 )
 
-(deftemplate movimientofinal
-    (slot origen (type INTEGER)(range 0 25))
-    (slot destino (type INTEGER)(range 1 26))
-    (slot dado (type INTEGER)(range 1 6))
-)
-
 
 
 (deffunction getTipo (?num)
@@ -191,7 +185,7 @@
     (loop-for-count (?i 1 6)
         (if (>  (nth$ ?i ?fichas) 0) then
             (printout t "Salida: " ?i " Destino: Meta blanca (25)"  crlf)
-            (assert (movimientofinal  (origen ?i) (destino 25) (dado ?dado)))
+            (assert (movimiento  (origen ?i) (destino 25) (dado ?dado)))
         )
     )
    
@@ -201,7 +195,7 @@
     (loop-for-count (?i 19 24)
         (if (< (nth$ ?i ?fichas) 0) then
             (printout t "Salida: " ?i " Destino: Meta negra (26)"  crlf)
-            (assert (movimientofinal  (origen ?i) (destino 26)  (dado ?dado)))        
+            (assert (movimiento  (origen ?i) (destino 26)  (dado ?dado)))        
         )
     )
    
@@ -574,7 +568,7 @@
     (imprimir ?fichas ?comidas)
     (printout t "resultado del primer dado:" crlf)
     (bind ?d1 (read))
-    (printout t "resultado del primer dado:" crlf)
+    (printout t "resultado del segundo dado:" crlf)
     (bind ?d2 (read))
     (assert (dado (d1 ?d1) (id 1)))
     (assert (dado (d1 ?d2) (id 2)))
@@ -710,25 +704,6 @@
         (retract ?dado)
     )
 
-    ; (bind ?destino_dif ?destino)
-
-
-    ; (if (eq ?destino 25) then
-    ;     (bind ?destino_dif 0)
-    ; )
-
-    ; (if (eq ?destino 26) then
-    ;     (bind ?destino_dif 25)
-    ; )
-
-
-    ; (bind ?diferencia (abs (- ?destino_dif ?origen)))
-
-    ; (do-for-fact ((?dado dado)) (eq ?dado:d1 ?diferencia); eliminar dado usado
-    ;     (retract ?dado)
-    ; )
-
-
     (if (= (nth$ ?destino ?fichas) (* -1 ?t)) then ; si hay una fichas del otro color
         (if (= ?t 1) then
             (bind $?comidas(replace$ ?comidas 2 2 (+ (nth$ 2 ?comidas) 1)))
@@ -763,66 +738,6 @@
     (imprimir ?fichas ?comidas)
 
 )
-
-(defrule eleccion_final
-     (declare (salience 10))
-    ?e<-(estado (id ?id) (padre ?padre) (fichas $?fichas) (comidas $?comidas) (turno ?t) (jugador ?jug))
-    (movimientofinal (origen ?) (destino ?) (dado ?d)); si solo hay uno ni preguntar
-    (test (= (str-compare ?jug humano) 0))
-    =>
-    (if (>=(length (find-all-facts ((?m movimientofinal)) TRUE)) 2) then
-        (printout t "Dime la casilla de origen:" )
-        (bind ?origen (read))
-
-        (while (not(any-factp ((?m movimientofinal)) (eq ?m:origen ?origen)))
-            (printout t ?origen " NO es ninguna de las opciones permitidas" crlf)  ;Bucle que comprueba si el origen es una opcion
-            (printout t "Dime la casilla de origen:")
-            (bind ?origen (read))
-        )
-        (printout t "Posibles destinos: ")
-        (do-for-all-facts ((?m movimientofinal)) (eq ?m:origen ?origen) ;Imprime todos los que tienen el origen dado
-            (printout t ?m:destino ", ")
-        )
-        (printout t crlf)
-        (printout t "Dime la casilla de destino: ")
-        (bind ?destino (read)) 
-
-        (while (not(any-factp ((?m movimientofinal)) (and (eq ?m:origen ?origen) (eq ?m:destino ?destino))))
-            (printout t ?destino " NO es ninguna de las opciones permitidas" crlf) ;Bucle que comprueba si el destino es una opcion
-            (printout t "Dime la casilla de destino:" )
-            (bind ?destino (read))
-        )
-        (printout t "realizar movimiento de la ficha en " ?origen " a " ?destino crlf)
-        (do-for-all-facts ((?m movimientofinal))
-            (retract ?m)
-        )
-    else
-
-        (do-for-fact ((?m movimientofinal)) TRUE
-            (bind ?origen ?m:origen)
-            (bind ?destino ?m:destino)
-            (printout t "realizar movimiento de la ficha en " ?origen " a " ?destino crlf)
-            (retract ?m)
-        )
-    )
-    (retract ?e)
-    (do-for-fact ((?dado dado)) (eq ?dado:d1 ?d) ; eliminar dado usado
-        (retract ?dado)
-    )
-
-    (bind $?fichas (replace$ ?fichas ?origen ?origen (- (nth$ ?origen ?fichas) ?t))) ; una ficha menos en el origen
-    (bind $?fichas (replace$ ?fichas ?destino ?destino (+ (nth$ ?destino ?fichas) ?t))) ; una ficha mas en el destino
-
-    (do-for-fact ((?jugador jugador)) (eq ?jugador:color ?t)
-    (bind ?j ?jugador:tipo)
-    )
-
-    (assert (estado (id ?id) (padre ?padre) (fichas ?fichas) (comidas ?comidas) (turno ?t) (jugador ?j)))
-
-    (imprimir ?fichas ?comidas)
-
-)
-
 
 (defrule victoriaBlancas
     (declare (salience 150))
