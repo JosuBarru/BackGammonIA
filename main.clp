@@ -241,107 +241,213 @@
     (return (create$ FALSE ?pos_lejana))
 )
 
+(deffunction assertState (?origen ?destino ?id ?padre ?t)
+
+    (do-for-fact ((?e estado)) (eq ?e:id ?padre)
+
+        (bind $?fichas (replace$ ?e:fichas ?origen ?origen (- (nth$ ?origen ?e:fichas) ?t))) ; una ficha menos en el origen
+        (bind $?fichas (replace$ ?e:fichas ?destino ?destino (+ (nth$ ?destino ?e:fichas) ?t))) ; una ficha mas en el destino
+
+        (do-for-fact ((?jugador jugador)) (eq ?jugador:color ?t)
+            (bind ?j ?jugador:tipo)
+        )
+
+        (assert (estado (id ?id) (padre ?padre) (fichas ?fichas) (comidas ?e:comidas) (turno ?t) (jugador ?j)))
+    )
+)
+
 
 ;Agente Inteligente
 
-(deffunction evaluarBlancas (?fichas ?comidas)
-    (if (= (nth$ 25 ?fichas) 15) then
-        (return 1000)
-    )
-    (bind ?puntuacion 0)
-    (bind ?puntuacion (- ?puntuacion (* (nth$ 1 ?comidas) 10))) ;Restamos por piezas que nos han comido
-    (bind ?puntuacion (+ ?puntuacion (* (nth$ 2 ?comidas) 10))) ;Sumamos por piezas que comemos
+(deffunction evaluarBlancas (?id)
+    (do-for-fact ((?e estado)) (eq ?id ?e:id)
+        (if (= (nth$ 25 ?e:fichas) 15) then
+            (return 1000)
+        )
+        (bind ?puntuacion 0)
+        (bind ?puntuacion (- ?puntuacion (* (nth$ 1 ?e:comidas) 10))) ;Restamos por piezas que nos han comido
+        (bind ?puntuacion (+ ?puntuacion (* (nth$ 2 ?e:comidas) 10))) ;Sumamos por piezas que comemos
 
-    (bind ?puntuacion (+ ?puntuacion (* (nth$ 25 ?fichas) 15))) ;Sumamos por las piezas que hayan llegado al final
-    (bind ?puntuacion (- ?puntuacion (* (nth$ 26 ?fichas) 15))) ;Restamos por las piezas rivales que hayan llegado al final
+        (bind ?puntuacion (+ ?puntuacion (* (nth$ 25 ?e:fichas) 15))) ;Sumamos por las piezas que hayan llegado al final
+        (bind ?puntuacion (- ?puntuacion (* (nth$ 26 ?e:fichas) 15))) ;Restamos por las piezas rivales que hayan llegado al final
 
-    (loop-for-count (?i 1 24)
-        (if (> (nth$ ?i ?fichas) 0) then
-            (bind ?puntuacion (- ?puntuacion (* (nth$ ?i ?fichas) ?i))) ;Restamos la distancia total de las blancas a la meta
-        else 
-            (if (< (nth$ ?i ?fichas) 0) then
-                (bind ?puntuacion (+ ?puntuacion (* (nth$ ?i ?fichas) (- 25 ?i)))) ;Sumamos la distancia total de las negras a la meta
+        (loop-for-count (?i 1 24)
+            (if (> (nth$ ?i ?e:fichas) 0) then
+                (bind ?puntuacion (- ?puntuacion (* (nth$ ?i ?e:fichas) ?i))) ;Restamos la distancia total de las blancas a la meta
+            else 
+                (if (< (nth$ ?i ?e:fichas) 0) then
+                    (bind ?puntuacion (+ ?puntuacion (* (nth$ ?i ?e:fichas) (- 25 ?i)))) ;Sumamos la distancia total de las negras a la meta
+                )
+            )
+            (if (= (nth$ ?i ?e:fichas) 1) then
+                (bind ?puntuacion (- ?puntuacion 50)) ;Restamos por dejar una sola ficha en una casilla
             )
         )
-        (if (= (nth$ ?i ?fichas) 1) then
-            (bind ?puntuacion (- ?puntuacion 50)) ;Restamos por dejar una sola ficha en una casilla
+        (bind $?res1 (ultimo_cuadrante1 ?e:fichas))
+        (bind $?res2 (ultimo_cuadrante2 ?e:fichas))
+
+        (if (eq (nth$ 1 ?res1) TRUE) then
+            (bind ?puntuacion (+ ?puntuacion 50))            ; Sumamos 50 si ya podemos meter las blancas en la meta
         )
-    )
-    (bind $?res1 (ultimo_cuadrante1 ?fichas))
-    (bind $?res2 (ultimo_cuadrante2 ?fichas))
 
-    (if (eq (nth$ 1 ?res1) TRUE) then
-        (bind ?puntuacion (+ ?puntuacion 50))            ; Sumamos 50 si ya podemos meter las blancas en la meta
-    )
+        (if (eq (nth$ 1 ?res2) TRUE) then
+            (bind ?puntuacion (+ ?puntuacion 50))            ; Restamos 50 si ya pueden meter las negras en la meta
+        )
 
-    (if (eq (nth$ 1 ?res2) TRUE) then
-        (bind ?puntuacion (+ ?puntuacion 50))            ; Restamos 50 si ya pueden meter las negras en la meta
+        (return ?puntuacion)
     )
-
-    (return ?puntuacion)
+    
 )
 
-(deffunction evaluarNegras (?fichas ?comidas)
-    (if (= (nth$ 26 ?fichas) -15) then
-        (return 1000)
-    )
-    (bind ?puntuacion 0)
-    (bind ?puntuacion (- ?puntuacion (* (nth$ 2 ?comidas) 10))) ;Restamos por piezas que nos han comido
-    (bind ?puntuacion (+ ?puntuacion (* (nth$ 1 ?comidas) 10))) ;Sumamos por piezas que comemos
+(deffunction evaluarNegras (?id)
+    (do-for-fact ((?e estado)) (eq ?id ?e:id)
+        (if (= (nth$ 26 ?e:fichas) -15) then
+            (return 1000)
+        )
+        (bind ?puntuacion 0)
+        (bind ?puntuacion (- ?puntuacion (* (nth$ 2 ?e:comidas) 10))) ;Restamos por piezas que nos han comido
+        (bind ?puntuacion (+ ?puntuacion (* (nth$ 1 ?e:comidas) 10))) ;Sumamos por piezas que comemos
 
-    (bind ?puntuacion (+ ?puntuacion (* (nth$ 25 ?fichas) 15))) ;Sumamos por las piezas que hayan llegado al final
-    (bind ?puntuacion (- ?puntuacion (* (nth$ 26 ?fichas) 15))) ;Restamos por las piezas rivales que hayan llegado al final
+        (bind ?puntuacion (+ ?puntuacion (* (nth$ 25 ?e:fichas) 15))) ;Sumamos por las piezas que hayan llegado al final
+        (bind ?puntuacion (- ?puntuacion (* (nth$ 26 ?e:fichas) 15))) ;Restamos por las piezas rivales que hayan llegado al final
 
-    (loop-for-count (?i 1 24)
-        (if (< (nth$ ?i ?fichas) 0) then
-            (bind ?puntuacion (- ?puntuacion (* (nth$ ?i ?fichas) (- 25 ?i)))) ;Restamos la distancia total de las negras a la meta
-        else 
-            (if (> (nth$ ?i ?fichas) 0) then
-                (bind ?puntuacion (+ ?puntuacion (* (nth$ ?i ?fichas) ?i))) ;Sumamos la distancia total de las blancas a la meta
+        (loop-for-count (?i 1 24)
+            (if (< (nth$ ?i ?e:fichas) 0) then
+                (bind ?puntuacion (- ?puntuacion (* (nth$ ?i ?e:fichas) (- 25 ?i)))) ;Restamos la distancia total de las negras a la meta
+            else 
+                (if (> (nth$ ?i ?e:fichas) 0) then
+                    (bind ?puntuacion (+ ?puntuacion (* (nth$ ?i ?e:fichas) ?i))) ;Sumamos la distancia total de las blancas a la meta
+                )
+            )
+            (if (= (nth$ ?i ?e:fichas) -1) then
+                (bind ?puntuacion (- ?puntuacion 50)) ;Restamos por dejar una sola ficha en una casilla
             )
         )
-        (if (= (nth$ ?i ?fichas) -1) then
-            (bind ?puntuacion (- ?puntuacion 50)) ;Restamos por dejar una sola ficha en una casilla
+
+        (bind $?res1 (ultimo_cuadrante1 ?e:fichas))
+        (bind $?res2 (ultimo_cuadrante2 ?e:fichas))
+
+        (if (eq (nth$ 1 ?res1) TRUE) then
+            (bind ?puntuacion (+ ?puntuacion 50))            ; Sumamos 50 si ya podemos meter las negras en la meta
         )
+
+        (if (eq (nth$ 1 ?res2) TRUE) then
+            (bind ?puntuacion (+ ?puntuacion 50))            ; Restamos 50 si ya pueden meter las blancas en la meta
+        )
+
+        (return ?puntuacion)
     )
-
-    (bind $?res1 (ultimo_cuadrante1 ?fichas))
-    (bind $?res2 (ultimo_cuadrante2 ?fichas))
-
-    (if (eq (nth$ 1 ?res1) TRUE) then
-        (bind ?puntuacion (+ ?puntuacion 50))            ; Sumamos 50 si ya podemos meter las negras en la meta
-    )
-
-    (if (eq (nth$ 1 ?res2) TRUE) then
-        (bind ?puntuacion (+ ?puntuacion 50))            ; Restamos 50 si ya pueden meter las blancas en la meta
-    )
-
-    (return ?puntuacion)
 )
 
-(deffunction expectimaxBlancas (?id ?next) ; Si next es 1 es max, si es 0, expValue
+(deffunction expectimaxBlancas (?id ?next) ; Si next es 1 es maxValue, si es 0 expValue
     (do-for-fact ((?e estado)) (eq ?e:id ?id)
         (if (or (= (nth$ 25 ?e:fichas) 15) (= ?e:profundidad 10)) then              ;Profundidad maxima es 10
-            (return (evaluarBlancas ?e:fichas ?e:comidas))
+            (return (evaluarBlancas ?e:id))
         )
     )
 )
 
-(deffunction expectimaxNegras (?id ?next) ; Si next es 1 es max, si es 0, expValue
+(deffunction expectimaxNegras (?id ?next) ; Si next es 1 es maxValue, si es 0 expValue
     (do-for-fact ((?e estado)) (eq ?e:id ?id)
         (if (or (= (nth$ 26 ?e:fichas) -15) (= ?e:profundidad 10)) then              ;Profundidad maxima es 10
-            (return (evaluarNegras ?e:fichas ?e:comidas))
+            (return (evaluarNegras ?e:id))
         )
     )
 )
 
-(deffunction expValue (?id)
-    
-    (bind ?v 0)
-    (do-for-all-facts ((?m movimiento)) (eq ?m:idEstado ?id)
-    (bind ?v (+ ?v expectimax ?))
+(deffunction maxValueBlancas (?id)
+    (bind ?numHijo (+ ?id 1))
+    (bind ?v -999999)
+    (do-for-fact ((?e estado)) (eq ?e:id ?id)
+        (loop-for-count (?dado 1 6)
+            (salidas ?e:fichas ?dado 1)         ;Obtenemos todos los posibles movimientos
+        )
     )
 
+    (do-for-all-facts ((?m movimiento)) (eq ?m:idEstado ?id)
+        (assertState ?m:origen ?m:destino ?numHijo ?id 1)       ;Dado un movimiento obtenemos el sucesor
+        (bind ?v (max ?v (expectimaxBlancas ?numHijo 0)))      
+        (do-for-fact ((?est estado)) (eq ?est:id ?numHijo)
+            (retract ?est)                                ;Borramos el estado para que no colisione
+        )
+        (bind ?numHijo (+ ?numHijo 1))
+        (retract ?m)
+    )
+
+    (return ?v)
+)
+
+(deffunction maxValueNegras (?id)
+    (bind ?numHijo (+ ?id 1))
+    (bind ?v -999999)
+    (do-for-fact ((?e estado)) (eq ?e:id ?id)
+        (loop-for-count (?dado 1 6)
+            (salidas ?e:fichas ?dado -1)         ;Obtenemos todos los posibles movimientos
+        )
+    )
+
+    (do-for-all-facts ((?m movimiento)) (eq ?m:idEstado ?id)
+        (assertState ?m:origen ?m:destino ?numHijo ?id -1)       ;Dado un movimiento obtenemos el sucesor
+        (bind ?v (max ?v (expectimaxNegras ?numHijo 0)))      
+        (do-for-fact ((?est estado)) (eq ?est:id ?numHijo)
+            (retract ?est)                                ;Borramos el estado para que no colisione
+        )
+        (bind ?numHijo (+ ?numHijo 1))
+        (retract ?m)
+    )
+
+    (return ?v)
+)
+
+(deffunction expValueBlancas (?id)
+    (bind ?numHijo (+ ?id 1))
+    (bind ?v 0)
+    (do-for-fact ((?e estado)) (eq ?e:id ?id)
+        (loop-for-count (?dado 1 6)
+            (salidas ?e:fichas ?dado 1)         ;Obtenemos todos los posibles movimientos
+        )
+    )
+    
+    (bind ?total (length (find-all-facts ((?m movimiento)) (eq ?m:idEstado ?id))))
+
+    (do-for-all-facts ((?m movimiento)) (eq ?m:idEstado ?id)
+        (assertState ?m:origen ?m:destino ?numHijo ?id 1)       ;Dado un movimiento obtenemos el sucesor
+        (bind ?v (+ ?v (expectimaxBlancas ?numHijo 1)))         
+        (do-for-fact ((?est estado)) (eq ?est:id ?numHijo)
+            (retract ?est)                                ;Borramos el estado para que no colisione
+        )
+        (bind ?numHijo (+ ?numHijo 1))
+        (retract ?m)
+    )
+
+    (bind ?v (/ ?v ?total))
+    (return ?v)
+
+)
+
+(deffunction expValueNegras (?id)
+    (bind ?numHijo (+ ?id 1))
+    (bind ?v 0)
+    (do-for-fact ((?e estado)) (eq ?e:id ?id)
+        (loop-for-count (?dado 1 6)
+            (salidas ?e:fichas ?dado -1)         ;Obtenemos todos los posibles movimientos
+        )
+    )
+    
+    (bind ?total (length (find-all-facts ((?m movimiento)) (eq ?m:idEstado ?id))))
+
+    (do-for-all-facts ((?m movimiento)) (eq ?m:idEstado ?id)
+        (assertState ?m:origen ?m:destino ?numHijo ?id -1)       ;Dado un movimiento obtenemos el sucesor
+        (bind ?v (+ ?v (expectimaxNegras ?numHijo 1)))         
+        (do-for-fact ((?est estado)) (eq ?est:id ?numHijo)
+            (retract ?est)                                ;Borramos el estado para que no colisione
+        )
+        (bind ?numHijo (+ ?numHijo 1))
+        (retract ?m)
+    )
+
+    (bind ?v (/ ?v ?total))
+    (return ?v)
 )
 
 ;Rules
