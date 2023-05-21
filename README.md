@@ -28,5 +28,7 @@ Una vez calculados los movimientos tenemos dos opciones:
 Si no hay movimientos posibles, se activa la regla borrar los dados, que como su nombre indica borra los dados para dar paso al siguiente turno.
 Si sí que se pueden realizar movimientos se activa eleccion. Esta regla nos deja elegir entre todos los movimientos posibles y ejecuta el que le digamos. Si solo hay un movimiento posible se ejecutará automáticamente. Esta regla se activará para todas las tiradas que nos correspondan en nuestro turno.
 
+Además, tenemos dos reglas, victoriaBlancas y victoriaNegras, que se ejecutan cuando uno de los dos haya ganado la partida y termina el programa con un halt.
+
 Para desarrollar la IA, hemos utilizado dos funciones: evaluarBlancas y evaluarNegras. Estas dos funciones dado el color del jugador nos darán una puntuacion a un estado de fichas.
 En el juego lo que tenemos son dos reglas, eleccionCPUBlancas y eleccionCPUNegras, que dado un estado y un dado, sacamos todos los movimientos posibles que puede hacer el jugador y los transformamos a estados. Estos son evaluados mediante las funciones antes mencionadas y se elige el mejor movimiento posible. La eleccion de dos reglas es por el mismo motivo de antes.
