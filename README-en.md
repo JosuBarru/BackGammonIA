@@ -1,5 +1,5 @@
 [![en](https://img.shields.io/badge/lang-en-red.svg)](https://github.com/JosuBarru/BackGammonIA/blob/main/README-en.md)
-[![es](https://img.shields.io/badge/lang-es-yellow.svg)](https://github.com/JosuBarru/BackGammonIA/blob/main/README.md)
+[![es](https://img.shields.io/badge/lang-es-blue.svg)](https://github.com/JosuBarru/BackGammonIA/blob/main/README.md)
 
 # BackGammonIA  
 Backgammon game programmed in CLIPS to play in manual mode (1v1), against an AI, or to have two AIs compete against each other.  
